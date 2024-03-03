@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <main className=" w-svw h-svh ">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={80}>
+        <ResizablePanel defaultSize={80} className="flex flex-col">
           <div className="p-2 flex justify-between items-center">
             <Button variant="outline" size="icon">
               <Menu className="h-[1.2rem] w-[1.2rem]" />
@@ -51,7 +51,7 @@ export default function Home() {
               <User size={16} />
             </Button>
           </div>
-          <IconArea />
+          <IconArea className="flex-1" />
           <ModeToggle />
         </ResizablePanel>
         <ResizableHandle />
