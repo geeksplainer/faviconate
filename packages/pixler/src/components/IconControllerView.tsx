@@ -53,7 +53,7 @@ function canvasPoint(
   return makePt(clientX, clientY);
 }
 
-export const IconControllerView: FC<CanvasViewProps> = (props) => {
+export function IconControllerView(props: CanvasViewProps): JSX.Element {
   const { controller, className } = props;
   const [cursor, setCursor] = useState<string>("default");
   const [mouseCurrentlyDown, setMouseCurrentlyDown] = useState<boolean>(false);
@@ -210,7 +210,7 @@ export const IconControllerView: FC<CanvasViewProps> = (props) => {
       onTouchEnd={(e) => touchEnd(e)}
     />
   );
-};
+}
 
 function ignoreKey(): boolean {
   const focused = document.querySelector("*:focus");
