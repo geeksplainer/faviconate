@@ -17,6 +17,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Sidebar } from "./components/sidebar";
+import { IconArea } from "./components/icon-area";
 
 export default function Home() {
   return (
@@ -50,6 +51,7 @@ export default function Home() {
               <User size={16} />
             </Button>
           </div>
+          <IconArea />
           <ModeToggle />
         </ResizablePanel>
         <ResizableHandle />

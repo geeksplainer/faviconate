@@ -3,6 +3,7 @@ import { makePt, Point, Rectangle, Size } from "../model/util/Rectangle";
 import { CanvasView, RenderParams } from "./CanvasView";
 
 interface CanvasViewProps {
+  className?: string;
   controller: CanvasViewController;
 }
 
@@ -53,7 +54,7 @@ function canvasPoint(
 }
 
 export const IconControllerView: FC<CanvasViewProps> = (props) => {
-  const { controller } = props;
+  const { controller, className } = props;
   const [cursor, setCursor] = useState<string>("default");
   const [mouseCurrentlyDown, setMouseCurrentlyDown] = useState<boolean>(false);
 
@@ -200,6 +201,7 @@ export const IconControllerView: FC<CanvasViewProps> = (props) => {
   return (
     <CanvasView
       render={render}
+      className={className}
       style={{ cursor }}
       onMouseDown={(e) => mouseDown(e)}
       onMouseMove={(e) => mouseMove(e)}
