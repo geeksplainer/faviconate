@@ -4,14 +4,25 @@ import { IconService } from "@faviconate/pixler/src/model/IconService";
 import { SelectionTool } from "@faviconate/pixler/src/model/tools/SelectionTool";
 import { PencilTool } from "@faviconate/pixler/src/model/tools/PencilTool";
 import { FloodFillTool } from "@faviconate/pixler/src/model/tools/FloodFillTool";
-import { createContext, use, useEffect } from "react";
+import { createContext, useEffect } from "react";
 import { useContext } from "react";
 import { useState } from "react";
 import { IconEditorTool } from "@faviconate/pixler/src/model/IconEditor";
 import { FaviconateCommand } from "@/models";
 import { Color } from "@faviconate/pixler/src/model/util/Color";
+import { useTheme } from "next-themes";
+import { IconDocumentRenderer } from "@faviconate/pixler/src/model/rendering/IconDocumentRenderer";
 
 type Tool = "select" | "pencil" | "bucket" | "eraser";
+
+const GRID_LIGHT = new Color(220, 220, 220, 255);
+const GRID_DARK = new Color(50, 50, 50);
+const CHECKER_LIGHT_A = Color.transparent;
+const CHECKER_LIGHT_B = new Color(240, 240, 240);
+const CHECKER_DARK_A = Color.transparent;
+const CHECKER_DARK_B = new Color(25, 25, 25);
+const DEFAULT_GRID = true;
+const DEFAULT_CHECKER = true;
 
 export interface FaviconateState {
   controller: IconCanvasController;
@@ -27,24 +38,30 @@ export interface FaviconateState {
   toggleChecker: () => void;
 }
 
+const getDefaultController = (dark: boolean): IconCanvasController => {
+  return new IconCanvasController(
+    { icon: IconService.newIcon(32, 32) },
+    {
+      drawGrid: DEFAULT_GRID,
+      drawBackground: DEFAULT_CHECKER,
+      gridColor: dark ? GRID_DARK : GRID_LIGHT,
+      checkerColorA: dark ? CHECKER_DARK_A : CHECKER_LIGHT_A,
+      checkerColorB: dark ? CHECKER_DARK_B : CHECKER_LIGHT_B,
+    }
+  );
+};
+
 const DefaultFaviconateState: FaviconateState = {
-  controller: new IconCanvasController({ icon: IconService.newIcon(32, 32) }),
+  controller: getDefaultController(true),
   tool: "pencil",
-  grid: true,
+  grid: DEFAULT_GRID,
+  checker: DEFAULT_CHECKER,
   color: Color.black,
   setTool: () => {},
   toggleGrid: () => {},
   executeCommand: () => {},
   setColor: () => {},
-  checker: true,
   toggleChecker: () => {},
-};
-
-const getDefaultController = () => {
-  return new IconCanvasController(
-    { icon: IconService.newIcon(32, 32) },
-    { drawGrid: true }
-  );
 };
 
 export const FaviconateContext = createContext<FaviconateState>(
@@ -57,12 +74,14 @@ export const FaviconateProvider = ({
   children: React.ReactNode;
 }) => {
   const [tool, setTool] = useState<Tool>("pencil");
-  const [grid, setGrid] = useState<boolean>(true);
-  const [checker, setChecker] = useState<boolean>(true);
+  const [grid, setGrid] = useState<boolean>(DEFAULT_GRID);
+  const [checker, setChecker] = useState<boolean>(DEFAULT_CHECKER);
   const [color, setColor] = useState<Color>(Color.black);
   const [toolInstance, setToolInstance] = useState<IconEditorTool | null>(null);
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === "dark";
   const [controller, setController] = useState<IconCanvasController>(
-    getDefaultController()
+    getDefaultController(dark)
   );
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -114,10 +133,26 @@ export const FaviconateProvider = ({
     setController(
       new IconCanvasController(
         { icon: controller.document.icon },
-        { drawGrid: grid, drawBackground: checker }
+        { ...controller.renderParams, drawGrid: grid, drawBackground: checker }
       )
     );
   }, [grid, checker]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    setTimeout(() => IconDocumentRenderer.clearCheckerCanvasCache());
+    setController(
+      new IconCanvasController(
+        { icon: controller.document.icon },
+        {
+          ...controller.renderParams,
+          gridColor: dark ? GRID_DARK : GRID_LIGHT,
+          checkerColorA: dark ? CHECKER_DARK_A : CHECKER_LIGHT_A,
+          checkerColorB: dark ? CHECKER_DARK_B : CHECKER_LIGHT_B,
+        }
+      )
+    );
+  }, [dark]);
 
   return (
     <FaviconateContext.Provider
