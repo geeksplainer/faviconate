@@ -3,6 +3,7 @@ import { IconCanvasController } from "@faviconate/pixler/src/model/IconCanvasCon
 import { IconService } from "@faviconate/pixler/src/model/IconService";
 import { SelectionTool } from "@faviconate/pixler/src/model/tools/SelectionTool";
 import { PencilTool } from "@faviconate/pixler/src/model/tools/PencilTool";
+import { EraserTool } from "@faviconate/pixler/src/model/tools/EraserTool";
 import { FloodFillTool } from "@faviconate/pixler/src/model/tools/FloodFillTool";
 import { createContext, useEffect } from "react";
 import { useContext } from "react";
@@ -12,7 +13,6 @@ import { FaviconateCommand } from "@/models";
 import { Color } from "@faviconate/pixler/src/model/util/Color";
 import { useTheme } from "next-themes";
 import { IconDocumentRenderer } from "@faviconate/pixler/src/model/rendering/IconDocumentRenderer";
-import { getMediaDarkModeOn } from "@faviconate/pixler/src/model/rendering/RenderUtils";
 
 type Tool = "select" | "pencil" | "bucket" | "eraser";
 
@@ -79,7 +79,7 @@ export const FaviconateProvider = ({
   const [checker, setChecker] = useState<boolean>(DEFAULT_CHECKER);
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
-  const [color, setColor] = useState<Color>(dark ? Color.white : Color.black);
+  const [color, setColor] = useState<Color>(new Color(150, 150, 150));
   const [toolInstance, setToolInstance] = useState<IconEditorTool | null>(null);
   const [controller, setController] = useState<IconCanvasController>(
     getDefaultController(dark)
@@ -120,6 +120,12 @@ export const FaviconateProvider = ({
         break;
       case "pencil":
         controller.tool = new PencilTool(controller);
+        break;
+      case "bucket":
+        controller.tool = new FloodFillTool(controller);
+        break;
+      case "eraser":
+        controller.tool = new EraserTool(controller);
         break;
     }
 

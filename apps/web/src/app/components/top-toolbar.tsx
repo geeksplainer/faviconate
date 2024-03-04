@@ -21,7 +21,7 @@ export function TopToolbar() {
       <Button variant="outline" size="icon">
         <Menu className="h-[1.2rem] w-[1.2rem]" />
       </Button>
-      <div className="border-input border rounded-md flex p-1 gap-1">
+      <div className="border-input border items-center rounded-md flex p-1 gap-1">
         <Button
           variant="ghost"
           size="icon"
@@ -30,7 +30,7 @@ export function TopToolbar() {
         >
           <MousePointer size={16} />
         </Button>
-        <Separator orientation="vertical" />
+        <Separator orientation="vertical" className="h-8" />
         <Button
           variant="ghost"
           size="icon"
@@ -55,7 +55,7 @@ export function TopToolbar() {
         >
           <Eraser size={16} />
         </Button>
-        <Separator orientation="vertical" />
+        <Separator orientation="vertical" className="h-8" />
         <Button
           variant="ghost"
           size="icon"
