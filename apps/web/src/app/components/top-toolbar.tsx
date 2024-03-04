@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   Eraser,
+  Grid2X2,
   Grid3X3,
   Menu,
   MousePointer,
@@ -13,7 +14,8 @@ import {
 } from "lucide-react";
 
 export function TopToolbar() {
-  const { tool, setTool, grid, toggleGrid } = useFaviconate();
+  const { tool, grid, checker, setTool, toggleGrid, toggleChecker } =
+    useFaviconate();
   return (
     <div className="p-2 flex justify-between items-center">
       <Button variant="outline" size="icon">
@@ -61,6 +63,14 @@ export function TopToolbar() {
           onClick={() => toggleGrid()}
         >
           <Grid3X3 size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(checker && "bg-secondary")}
+          onClick={() => toggleChecker()}
+        >
+          <Grid2X2 size={16} />
         </Button>
       </div>
       <Button variant="outline" size="icon">
