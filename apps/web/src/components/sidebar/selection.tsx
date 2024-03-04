@@ -1,19 +1,42 @@
-import { BoxSelect, CircleOff, Crop, Delete } from "lucide-react";
+import { BoxSelect, CircleOff, Crop, Delete, LucideIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   SidebarPanel,
   SidebarPanelContent,
   SidebarPanelTitle,
 } from "./sidebar-panel";
+import { FaviconateCommand } from "@/models";
+import { useFaviconate } from "../FaviconateContext";
 
-const commands = [
-  { name: "Select All", shortcut: "Ctrl + A", icon: BoxSelect },
-  { name: "Clear Selection", shortcut: "Esc", icon: CircleOff },
-  { name: "Delete Selection", shortcut: "Backspace", icon: Delete },
-  { name: "Crop", shortcut: "", icon: Crop },
+const commands: {
+  name: string;
+  shortcut: string;
+  icon: LucideIcon;
+  command: FaviconateCommand;
+}[] = [
+  {
+    name: "Select All",
+    shortcut: "Ctrl + A",
+    icon: BoxSelect,
+    command: "selectAll",
+  },
+  {
+    name: "Clear Selection",
+    shortcut: "Esc",
+    icon: CircleOff,
+    command: "clearSelection",
+  },
+  {
+    name: "Delete Selection",
+    shortcut: "Backspace",
+    icon: Delete,
+    command: "deleteSelection",
+  },
+  { name: "Crop", shortcut: "", icon: Crop, command: "crop" },
 ];
 
 export function Selection() {
+  const { executeCommand } = useFaviconate();
   return (
     <SidebarPanel>
       <SidebarPanelTitle>Selection</SidebarPanelTitle>
@@ -24,6 +47,7 @@ export function Selection() {
               key={command.name}
               variant={"ghost"}
               className="flex justify-start"
+              onClick={() => executeCommand(command.command)}
             >
               <command.icon size={16} className="mr-3" /> {command.name}
             </Button>
