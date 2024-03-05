@@ -79,12 +79,12 @@ export function useSelection({
   };
 
   const selectionDragEnded = () => {
+    setSelecting(false);
     if (!document.selectionRegion) {
       return;
     }
 
     selectRegion(document.selectionRegion, false);
-    setSelecting(false);
     commit();
   };
 
@@ -297,19 +297,17 @@ export function useSelection({
 
     if (selecting) {
       selectionDragEnded();
+      return;
     }
 
     if (dragging) {
       dragEnded();
+      return;
     }
-
-    commit();
 
     if (pixelIsInsideSelection(p)) {
       return { cursor: "move" };
     }
-
-    throw new NoSelectionError();
   };
 
   const pointingGestureMove = (

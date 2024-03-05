@@ -86,7 +86,7 @@ export const FaviconateProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [tool, setTool] = useState<Tool>("pencil");
+  const [tool, setTool] = useState<Tool>("select");
   const [grid, setGrid] = useState<boolean>(DEFAULT_GRID);
   const [checker, setChecker] = useState<boolean>(DEFAULT_CHECKER);
   const { resolvedTheme } = useTheme();
