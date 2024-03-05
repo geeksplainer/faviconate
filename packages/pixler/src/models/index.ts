@@ -18,6 +18,7 @@ export interface PointingEvent {
 export interface ControllerPointingEvent extends PointingEvent {
   pointToData(point: Point): number;
   pointToPixel(point: Point): Point | null;
+  pixelToData(pixel: Point): number;
 }
 
 export interface PointingEventResult {

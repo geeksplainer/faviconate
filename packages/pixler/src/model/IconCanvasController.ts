@@ -251,7 +251,12 @@ export function createIconCanvasController({
 
     if (tool?.pointingGestureStart) {
       // eslint-disable-next-line consistent-return
-      return tool.pointingGestureStart({ ...e, pointToData, pointToPixel });
+      return tool.pointingGestureStart({
+        ...e,
+        pointToData,
+        pointToPixel,
+        pixelToData,
+      });
     }
   };
 
@@ -270,7 +275,12 @@ export function createIconCanvasController({
 
     if (tool?.pointingGestureMove) {
       // eslint-disable-next-line consistent-return
-      return tool.pointingGestureMove({ ...e, pointToData, pointToPixel });
+      return tool.pointingGestureMove({
+        ...e,
+        pointToData,
+        pointToPixel,
+        pixelToData,
+      });
     }
   };
 
@@ -278,7 +288,12 @@ export function createIconCanvasController({
     e: PointingEvent
   ): PointingEventResult | undefined => {
     if (tool?.pointingGestureEnd) {
-      return tool.pointingGestureEnd({ ...e, pointToData, pointToPixel });
+      return tool.pointingGestureEnd({
+        ...e,
+        pointToData,
+        pointToPixel,
+        pixelToData,
+      });
     }
   };
 

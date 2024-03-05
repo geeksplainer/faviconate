@@ -5,10 +5,6 @@ import {
   IconCanvasProps,
 } from "@faviconate/pixler/src/model/IconCanvasController";
 import { IconService } from "@faviconate/pixler/src/model/IconService";
-import { SelectionTool } from "@faviconate/pixler/src/model/tools/SelectionTool";
-import { PencilTool } from "@faviconate/pixler/src/model/tools/PencilTool";
-import { EraserTool } from "@faviconate/pixler/src/model/tools/EraserTool";
-import { FloodFillTool } from "@faviconate/pixler/src/model/tools/FloodFillTool";
 import { createContext, useEffect } from "react";
 import { useContext } from "react";
 import { useState } from "react";
@@ -17,9 +13,9 @@ import { Color } from "@faviconate/pixler/src/model/util/Color";
 import { useTheme } from "next-themes";
 import { IconDocumentRenderer } from "@faviconate/pixler/src/model/rendering/IconDocumentRenderer";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
-import { IconEditorTool } from "@faviconate/pixler/src/models";
 import { usePencil } from "@/hooks/usePencil";
 import { useSelection } from "@/hooks/useSelection";
+import { useFloodFill } from "@/hooks/useFloodFill";
 
 type Tool = "select" | "pencil" | "bucket" | "eraser";
 
@@ -86,7 +82,7 @@ export const FaviconateProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [tool, setTool] = useState<Tool>("select");
+  const [tool, setTool] = useState<Tool>("pencil");
   const [grid, setGrid] = useState<boolean>(DEFAULT_GRID);
   const [checker, setChecker] = useState<boolean>(DEFAULT_CHECKER);
   const { resolvedTheme } = useTheme();
@@ -113,13 +109,34 @@ export const FaviconateProvider = ({
     commit,
   });
 
+  const floodFill = useFloodFill({
+    color,
+    document,
+    setDocument,
+    commit,
+  });
+
+  const eraser = usePencil({
+    color: Color.transparent,
+    document,
+    setDocument,
+    commit,
+  });
+
   const controller = createIconCanvasController({
     ...controllerProps,
     document,
     setDocument,
     commit,
     rollback,
-    tool: tool === "select" ? selection : pencil,
+    tool:
+      tool === "select"
+        ? selection
+        : tool === "bucket"
+        ? floodFill
+        : tool === "eraser"
+        ? eraser
+        : pencil,
   });
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
