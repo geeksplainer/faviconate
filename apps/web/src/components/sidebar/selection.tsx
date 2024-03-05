@@ -7,36 +7,42 @@ import {
 } from "./sidebar-panel";
 import { FaviconateCommand } from "@/models";
 import { useFaviconate } from "../FaviconateContext";
+import { SelectionToolCommands } from "@/hooks/useSelection";
 
 const commands: {
   name: string;
   shortcut: string;
   icon: LucideIcon;
-  command: FaviconateCommand;
+  command: (tool: SelectionToolCommands) => void;
 }[] = [
   {
     name: "Select All",
     shortcut: "Ctrl + A",
     icon: BoxSelect,
-    command: "selectAll",
+    command: (tool) => tool.selectAll(),
   },
   {
     name: "Clear Selection",
     shortcut: "Esc",
     icon: CircleOff,
-    command: "clearSelection",
+    command: (tool) => tool.clearSelection(),
   },
   {
     name: "Delete Selection",
     shortcut: "Backspace",
     icon: Delete,
-    command: "deleteSelection",
+    command: (tool) => tool.deleteSelection(),
   },
-  { name: "Crop", shortcut: "", icon: Crop, command: "crop" },
+  {
+    name: "Crop",
+    shortcut: "",
+    icon: Crop,
+    command: (tool) => tool.cropToSelection(),
+  },
 ];
 
 export function Selection() {
-  const { executeCommand } = useFaviconate();
+  const { selectTool } = useFaviconate();
   return (
     <SidebarPanel>
       <SidebarPanelTitle>Selection</SidebarPanelTitle>
@@ -47,7 +53,7 @@ export function Selection() {
               key={command.name}
               variant={"ghost"}
               className="flex justify-start"
-              onClick={() => executeCommand(command.command)}
+              onClick={() => selectTool && command.command(selectTool)}
             >
               <command.icon size={16} className="mr-3" /> {command.name}
             </Button>

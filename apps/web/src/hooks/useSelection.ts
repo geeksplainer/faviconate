@@ -13,12 +13,32 @@ import {
   KeyEvent,
   KeyEventResult,
   PointingEventResult,
-  ToolProps,
 } from "@faviconate/pixler/src/models";
 import { useEffect, useState } from "react";
 
 type SelectionDragMode = "sprite" | "area";
 export class NoSelectionError extends Error {}
+
+export interface SelectionToolCommands {
+  selectAll: () => void;
+  clearSelection: () => void;
+  deleteSelection: () => void;
+  cropToSelection: () => void;
+}
+
+export type SelectionTool = SelectionToolCommands & {
+  pointingGestureStart: (
+    e: ControllerPointingEvent
+  ) => PointingEventResult | undefined;
+  pointingGestureMove: (
+    e: ControllerPointingEvent
+  ) => PointingEventResult | undefined;
+  pointingGestureEnd: (
+    e: ControllerPointingEvent
+  ) => PointingEventResult | undefined;
+  keyDown: (e: KeyEvent) => KeyEventResult | undefined;
+  deactivate: () => void;
+};
 
 export function useSelection({
   document,
@@ -28,7 +48,7 @@ export function useSelection({
   document: IconDocument;
   setDocument: (doc: IconDocument) => void;
   commit: () => void;
-}) {
+}): SelectionTool {
   const [selecting, setSelecting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -48,14 +68,15 @@ export function useSelection({
     buffer: Icon;
     sprite: Icon;
   } => {
-    if (!document.selectionRegion) {
+    const doc = sourceDocument || document;
+    if (!doc.selectionRegion) {
       throw new Error("No selection region to clip out");
     }
 
-    const buffer = IconService.clone(document.icon);
-    const sprite = IconService.fromIcon(buffer, document.selectionRegion);
+    const buffer = IconService.clone(doc.icon);
+    const sprite = IconService.fromIcon(buffer, doc.selectionRegion);
 
-    IconService.region32(buffer, document.selectionRegion, (index) => {
+    IconService.region32(buffer, doc.selectionRegion, (index) => {
       buffer.data[index] = 0;
       buffer.data[index + 1] = 0;
       buffer.data[index + 2] = 0;
@@ -211,7 +232,12 @@ export function useSelection({
         selectionSprite: sprite,
       };
     }
+
     setDocument(doc);
+
+    if (transact) {
+      commit();
+    }
   };
 
   const selectAll = () => {

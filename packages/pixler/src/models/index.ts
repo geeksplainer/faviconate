@@ -1,4 +1,3 @@
-import { IconCanvasController } from "..";
 import { Icon } from "../model/Icon";
 import { Color } from "../model/util/Color";
 import { Point, Rectangle, Size } from "../model/util/Rectangle";

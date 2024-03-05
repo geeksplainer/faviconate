@@ -8,14 +8,14 @@ import { IconService } from "@faviconate/pixler/src/model/IconService";
 import { createContext, useEffect } from "react";
 import { useContext } from "react";
 import { useState } from "react";
-import { FaviconateCommand } from "@/models";
 import { Color } from "@faviconate/pixler/src/model/util/Color";
 import { useTheme } from "next-themes";
 import { IconDocumentRenderer } from "@faviconate/pixler/src/model/rendering/IconDocumentRenderer";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { usePencil } from "@/hooks/usePencil";
-import { useSelection } from "@/hooks/useSelection";
+import { SelectionToolCommands, useSelection } from "@/hooks/useSelection";
 import { useFloodFill } from "@/hooks/useFloodFill";
+import { IconDocument } from "@faviconate/pixler/src/models";
 
 type Tool = "select" | "pencil" | "bucket" | "eraser";
 
@@ -29,18 +29,22 @@ const DEFAULT_GRID = true;
 const DEFAULT_CHECKER = true;
 
 export interface FaviconateState {
+  documents: IconDocument[];
+  currentDocument: number;
   controllerProps: IconCanvasProps;
   controller: IconCanvasController;
   tool: Tool;
   grid: boolean;
   color: Color;
   checker: boolean;
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  executeCommand: (command: FaviconateCommand, ...args: any[]) => void;
+  selectTool?: SelectionToolCommands;
   setTool: (tool: Tool) => void;
   setColor: (color: Color) => void;
   toggleGrid: () => void;
   toggleChecker: () => void;
+  setCurrentDocument?: (index: number) => void;
+  addDocument?: (document: IconDocument) => void;
+  removeDocument?: (index: number) => void;
 }
 
 const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
@@ -60,6 +64,8 @@ const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
 };
 
 const DefaultFaviconateState: FaviconateState = {
+  documents: [],
+  currentDocument: 0,
   controllerProps: getDefaultControllerProps(true),
   controller: createIconCanvasController(getDefaultControllerProps(true)),
   tool: "pencil",
@@ -68,7 +74,6 @@ const DefaultFaviconateState: FaviconateState = {
   color: Color.black,
   setTool: () => {},
   toggleGrid: () => {},
-  executeCommand: () => {},
   setColor: () => {},
   toggleChecker: () => {},
 };
@@ -85,6 +90,7 @@ export const FaviconateProvider = ({
   const [tool, setTool] = useState<Tool>("pencil");
   const [grid, setGrid] = useState<boolean>(DEFAULT_GRID);
   const [checker, setChecker] = useState<boolean>(DEFAULT_CHECKER);
+  const [currentDocument, setCurrentDocument] = useState(0);
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
   const [color, setColor] = useState<Color>(new Color(150, 150, 150));
@@ -92,9 +98,16 @@ export const FaviconateProvider = ({
     getDefaultControllerProps(dark)
   );
 
-  const { document, setDocument, commit, rollback } = useUndoRedo(
-    getDefaultControllerProps(dark).document
-  );
+  const {
+    document: documents,
+    setDocument: setDocuments,
+    commit,
+    rollback,
+  } = useUndoRedo([getDefaultControllerProps(dark).document]);
+
+  const document = documents[currentDocument];
+  const setDocument = (doc: IconDocument) =>
+    setDocuments(documents.map((d, i) => (i === currentDocument ? doc : d)));
 
   const pencil = usePencil({
     color,
@@ -139,53 +152,15 @@ export const FaviconateProvider = ({
         : pencil,
   });
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const executeCommand = (command: FaviconateCommand, ...args: any) => {
-    // if (toolInstance) {
-    //   switch (command) {
-    //     case "selectAll":
-    //       (toolInstance as SelectionTool).selectAll();
-    //       break;
-    //     case "clearSelection":
-    //       (toolInstance as SelectionTool).clearSelection();
-    //       break;
-    //     case "deleteSelection":
-    //       (toolInstance as SelectionTool).deleteSelection();
-    //       break;
-    //     case "crop":
-    //       (toolInstance as SelectionTool).cropToSelection();
-    //       break;
-    //   }
-    // }
+  const addDocument = (document: IconDocument) => {
+    setDocuments([...documents, document]);
+    setCurrentDocument(documents.length);
   };
 
-  // useEffect(() => {
-  //   if (toolInstance instanceof PencilTool) {
-  //     toolInstance.color = color;
-  //   } else if (toolInstance instanceof FloodFillTool) {
-  //     toolInstance.color = color;
-  //   }
-  // }, [toolInstance, color]);
-
-  // useEffect(() => {
-  //   switch (tool) {
-  //     case "select":
-  //       setToolInstance(controller.tool);
-  //       controller.tool = new SelectionTool(controller);
-  //       break;
-  //     case "pencil":
-  //       controller.tool = new PencilTool(controller);
-  //       break;
-  //     case "bucket":
-  //       controller.tool = new FloodFillTool(controller);
-  //       break;
-  //     case "eraser":
-  //       controller.tool = new EraserTool(controller);
-  //       break;
-  //   }
-
-  //   setToolInstance(controller.tool);
-  // }, [tool]);
+  const removeDocument = (index: number) => {
+    setDocuments(documents.filter((_, i) => i !== index));
+    setCurrentDocument(0);
+  };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -200,6 +175,7 @@ export const FaviconateProvider = ({
         drawBackground: checker,
       },
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grid, checker]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -230,22 +206,28 @@ export const FaviconateProvider = ({
       },
     });
     setTimeout(() => IconDocumentRenderer.clearCheckerCanvasCache());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedTheme]);
 
   return (
     <FaviconateContext.Provider
       value={{
+        documents,
+        currentDocument,
         controllerProps,
         controller,
         tool,
         grid,
         color,
         checker,
+        selectTool: selection,
         setColor,
-        executeCommand,
         setTool,
         toggleGrid: () => setGrid(!grid),
         toggleChecker: () => setChecker(!checker),
+        addDocument,
+        setCurrentDocument,
+        removeDocument,
       }}
     >
       {children}
