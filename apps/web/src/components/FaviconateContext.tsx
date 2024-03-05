@@ -19,6 +19,7 @@ import { IconDocumentRenderer } from "@faviconate/pixler/src/model/rendering/Ico
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { IconEditorTool } from "@faviconate/pixler/src/models";
 import { usePencil } from "@/hooks/usePencil";
+import { useSelection } from "@/hooks/useSelection";
 
 type Tool = "select" | "pencil" | "bucket" | "eraser";
 
@@ -106,13 +107,19 @@ export const FaviconateProvider = ({
     commit,
   });
 
+  const selection = useSelection({
+    document,
+    setDocument,
+    commit,
+  });
+
   const controller = createIconCanvasController({
     ...controllerProps,
     document,
     setDocument,
     commit,
     rollback,
-    tool: pencil,
+    tool: tool === "select" ? selection : pencil,
   });
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

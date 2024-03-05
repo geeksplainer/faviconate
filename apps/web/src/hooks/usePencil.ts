@@ -5,15 +5,9 @@ import {
   ControllerPointingEvent,
   IconDocument,
   PointingEventResult,
+  ToolProps,
 } from "@faviconate/pixler/src/models";
 import { useState } from "react";
-
-interface ToolProps {
-  color: Color;
-  document: IconDocument;
-  setDocument: (doc: IconDocument) => void;
-  commit: () => void;
-}
 
 export function usePencil({ color, document, setDocument, commit }: ToolProps) {
   const [drawing, onDrawingChange] = useState(false);
