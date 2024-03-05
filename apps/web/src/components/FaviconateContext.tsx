@@ -1,5 +1,9 @@
 "use client";
-import { IconCanvasController } from "@faviconate/pixler/src/model/IconCanvasController";
+import {
+  createIconCanvasController,
+  IconCanvasController,
+  IconCanvasProps,
+} from "@faviconate/pixler/src/model/IconCanvasController";
 import { IconService } from "@faviconate/pixler/src/model/IconService";
 import { SelectionTool } from "@faviconate/pixler/src/model/tools/SelectionTool";
 import { PencilTool } from "@faviconate/pixler/src/model/tools/PencilTool";
@@ -8,11 +12,13 @@ import { FloodFillTool } from "@faviconate/pixler/src/model/tools/FloodFillTool"
 import { createContext, useEffect } from "react";
 import { useContext } from "react";
 import { useState } from "react";
-import { IconEditorTool } from "@faviconate/pixler/src/model/IconEditor";
 import { FaviconateCommand } from "@/models";
 import { Color } from "@faviconate/pixler/src/model/util/Color";
 import { useTheme } from "next-themes";
 import { IconDocumentRenderer } from "@faviconate/pixler/src/model/rendering/IconDocumentRenderer";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { IconEditorTool } from "@faviconate/pixler/src/models";
+import { usePencil } from "@/hooks/usePencil";
 
 type Tool = "select" | "pencil" | "bucket" | "eraser";
 
@@ -26,6 +32,7 @@ const DEFAULT_GRID = true;
 const DEFAULT_CHECKER = true;
 
 export interface FaviconateState {
+  controllerProps: IconCanvasProps;
   controller: IconCanvasController;
   tool: Tool;
   grid: boolean;
@@ -39,21 +46,25 @@ export interface FaviconateState {
   toggleChecker: () => void;
 }
 
-const getDefaultController = (dark: boolean): IconCanvasController => {
-  return new IconCanvasController(
-    { icon: IconService.newIcon(32, 32) },
-    {
+const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
+  return {
+    document: { icon: IconService.newIcon(32, 32) },
+    setDocument: () => {},
+    commit: () => {},
+    rollback: () => {},
+    renderParams: {
       drawGrid: DEFAULT_GRID,
       drawBackground: DEFAULT_CHECKER,
       gridColor: dark ? GRID_DARK : GRID_LIGHT,
       checkerColorA: dark ? CHECKER_DARK_A : CHECKER_LIGHT_A,
       checkerColorB: dark ? CHECKER_DARK_B : CHECKER_LIGHT_B,
-    }
-  );
+    },
+  };
 };
 
 const DefaultFaviconateState: FaviconateState = {
-  controller: getDefaultController(true),
+  controllerProps: getDefaultControllerProps(true),
+  controller: createIconCanvasController(getDefaultControllerProps(true)),
   tool: "pencil",
   grid: DEFAULT_GRID,
   checker: DEFAULT_CHECKER,
@@ -80,106 +91,127 @@ export const FaviconateProvider = ({
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
   const [color, setColor] = useState<Color>(new Color(150, 150, 150));
-  const [toolInstance, setToolInstance] = useState<IconEditorTool | null>(null);
-  const [controller, setController] = useState<IconCanvasController>(
-    getDefaultController(dark)
+  const [controllerProps, setControllerProps] = useState<IconCanvasProps>(
+    getDefaultControllerProps(dark)
   );
+
+  const { document, setDocument, commit, rollback } = useUndoRedo(
+    getDefaultControllerProps(dark).document
+  );
+
+  const pencil = usePencil({
+    color,
+    document,
+    setDocument,
+    commit,
+  });
+
+  const controller = createIconCanvasController({
+    ...controllerProps,
+    document,
+    setDocument,
+    commit,
+    rollback,
+    tool: pencil,
+  });
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const executeCommand = (command: FaviconateCommand, ...args: any) => {
-    if (toolInstance) {
-      switch (command) {
-        case "selectAll":
-          (toolInstance as SelectionTool).selectAll();
-          break;
-        case "clearSelection":
-          (toolInstance as SelectionTool).clearSelection();
-          break;
-        case "deleteSelection":
-          (toolInstance as SelectionTool).deleteSelection();
-          break;
-        case "crop":
-          (toolInstance as SelectionTool).cropToSelection();
-          break;
-      }
-    }
+    // if (toolInstance) {
+    //   switch (command) {
+    //     case "selectAll":
+    //       (toolInstance as SelectionTool).selectAll();
+    //       break;
+    //     case "clearSelection":
+    //       (toolInstance as SelectionTool).clearSelection();
+    //       break;
+    //     case "deleteSelection":
+    //       (toolInstance as SelectionTool).deleteSelection();
+    //       break;
+    //     case "crop":
+    //       (toolInstance as SelectionTool).cropToSelection();
+    //       break;
+    //   }
+    // }
   };
 
-  useEffect(() => {
-    if (toolInstance instanceof PencilTool) {
-      toolInstance.color = color;
-    } else if (toolInstance instanceof FloodFillTool) {
-      toolInstance.color = color;
-    }
-  }, [toolInstance, color]);
+  // useEffect(() => {
+  //   if (toolInstance instanceof PencilTool) {
+  //     toolInstance.color = color;
+  //   } else if (toolInstance instanceof FloodFillTool) {
+  //     toolInstance.color = color;
+  //   }
+  // }, [toolInstance, color]);
 
-  useEffect(() => {
-    switch (tool) {
-      case "select":
-        controller.tool = new SelectionTool(controller);
-        break;
-      case "pencil":
-        controller.tool = new PencilTool(controller);
-        break;
-      case "bucket":
-        controller.tool = new FloodFillTool(controller);
-        break;
-      case "eraser":
-        controller.tool = new EraserTool(controller);
-        break;
-    }
+  // useEffect(() => {
+  //   switch (tool) {
+  //     case "select":
+  //       setToolInstance(controller.tool);
+  //       controller.tool = new SelectionTool(controller);
+  //       break;
+  //     case "pencil":
+  //       controller.tool = new PencilTool(controller);
+  //       break;
+  //     case "bucket":
+  //       controller.tool = new FloodFillTool(controller);
+  //       break;
+  //     case "eraser":
+  //       controller.tool = new EraserTool(controller);
+  //       break;
+  //   }
 
-    setToolInstance(controller.tool);
-  }, [controller, tool]);
+  //   setToolInstance(controller.tool);
+  // }, [tool]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!controller.document) {
       throw new Error("Controller document is undefined");
     }
-    setController(
-      new IconCanvasController(
-        { icon: controller.document.icon },
-        { ...controller.renderParams, drawGrid: grid, drawBackground: checker }
-      )
-    );
+    setControllerProps({
+      ...controllerProps,
+      renderParams: {
+        ...controllerProps.renderParams,
+        drawGrid: grid,
+        drawBackground: checker,
+      },
+    });
   }, [grid, checker]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     const resolved = !!resolvedTheme && resolvedTheme !== "system";
     console.log({ resolvedTheme, resolved });
-    setController(
-      new IconCanvasController(
-        { icon: controller.document.icon },
-        {
-          ...controller.renderParams,
-          drawGrid: resolved && grid,
-          drawBackground: resolved && checker,
-          gridColor: resolved
-            ? dark
-              ? GRID_DARK
-              : GRID_LIGHT
-            : Color.transparent,
-          checkerColorA: resolved
-            ? dark
-              ? CHECKER_DARK_A
-              : CHECKER_LIGHT_A
-            : Color.transparent,
-          checkerColorB: resolved
-            ? dark
-              ? CHECKER_DARK_B
-              : CHECKER_LIGHT_B
-            : Color.transparent,
-        }
-      )
-    );
+    setControllerProps({
+      ...controllerProps,
+      renderParams: {
+        ...controllerProps.renderParams,
+        drawGrid: resolved && grid,
+        drawBackground: resolved && checker,
+        gridColor: resolved
+          ? dark
+            ? GRID_DARK
+            : GRID_LIGHT
+          : Color.transparent,
+        checkerColorA: resolved
+          ? dark
+            ? CHECKER_DARK_A
+            : CHECKER_LIGHT_A
+          : Color.transparent,
+        checkerColorB: resolved
+          ? dark
+            ? CHECKER_DARK_B
+            : CHECKER_LIGHT_B
+          : Color.transparent,
+      },
+    });
     setTimeout(() => IconDocumentRenderer.clearCheckerCanvasCache());
   }, [resolvedTheme]);
 
   return (
     <FaviconateContext.Provider
       value={{
+        controllerProps,
         controller,
         tool,
         grid,
