@@ -1,10 +1,7 @@
 import { IconEditorTool } from "../IconEditor";
 import { Color } from "../util/Color";
 import { IconCanvasController } from "../IconCanvasController";
-import {
-  PointingEvent,
-  PointingEventResult,
-} from "../../components/IconControllerView";
+import { PointingEvent, PointingEventResult } from "../../models";
 import { Point } from "../util/Rectangle";
 import { PrimaryColorTool } from "./PrimaryColorTool";
 
@@ -14,19 +11,17 @@ export class FloodFillTool extends PrimaryColorTool implements IconEditorTool {
   }
 
   fill(p: Point) {
-    this.controller.editor.begin();
-
     const LIMIT = 30_000;
     const tuple = this.color.tupleInt8;
-    const doc = this.controller.editor.cloneDocument();
+    const doc = this.controller.cloneDocument();
     const { data } = doc.icon;
     const { width } = doc.icon;
     const index = this.controller.pixelToData(p);
     const origin = new Color(
-      doc.icon.data[index],
-      doc.icon.data[index + 1],
-      doc.icon.data[index + 2],
-      doc.icon.data[index + 3]
+      doc.icon.data[index] || 0,
+      doc.icon.data[index + 1] || 0,
+      doc.icon.data[index + 2] || 0,
+      doc.icon.data[index + 3 || 0]
     );
     const q: number[] = [];
     const visited: number[] = [];
@@ -46,7 +41,7 @@ export class FloodFillTool extends PrimaryColorTool implements IconEditorTool {
 
         if (counter >= LIMIT) {
           counter = 0;
-          this.controller.editor.setDocument(doc);
+          this.controller.setDocument(doc);
           setTimeout(() => keep());
           return;
         }
@@ -56,7 +51,12 @@ export class FloodFillTool extends PrimaryColorTool implements IconEditorTool {
         if (typeof n === "number") {
           const insideArray = n >= 0 || n + 3 < data.length;
           const matchesColor = origin.equals(
-            new Color(data[n], data[n + 1], data[n + 2], data[n + 3])
+            new Color(
+              data[n] || 0,
+              data[n + 1] || 0,
+              data[n + 2] || 0,
+              data[n + 3] || 0
+            )
           );
           const repeated = visited.includes(n);
 
@@ -73,18 +73,19 @@ export class FloodFillTool extends PrimaryColorTool implements IconEditorTool {
         }
       }
 
-      this.controller.editor.commit(doc);
+      this.controller.commit();
     };
 
     batch();
   }
 
-  pointingGestureStart(e: PointingEvent): PointingEventResult | void {
+  pointingGestureStart(e: PointingEvent): PointingEventResult | undefined {
     const p = this.controller.pointToPixel(e.point);
 
     if (p) {
       this.fill(p);
     }
+    return;
   }
 
   useColor(color: Color) {

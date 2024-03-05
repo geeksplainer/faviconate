@@ -1,78 +1,27 @@
-import { FC, useCallback, useEffect, useState } from "react";
-import { makePt, Point, Rectangle, Size } from "../model/util/Rectangle";
+import { useEffect, useState } from "react";
+import { makePt, Point, Rectangle } from "../model/util/Rectangle";
 import { CanvasView, RenderParams } from "./CanvasView";
+import { CanvasViewController, PointingEventResult } from "../models";
 
 interface CanvasViewProps {
   className?: string;
   controller: CanvasViewController;
 }
 
-export interface PointingEvent {
-  point: Point;
-  touch: boolean;
-}
-
-export interface PointingEventResult {
-  cursor?: string;
-}
-
-export interface KeyEvent {
-  key: string;
-}
-
-export interface KeyEventResult {
-  preventDefault?: boolean;
-}
-
-export interface CanvasSensor {
-  // biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
-  pointingGestureMove?(e: PointingEvent): PointingEventResult | void;
-  // biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
-  pointingGestureStart?(e: PointingEvent): PointingEventResult | void;
-  // biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
-  pointingGestureEnd?(e: PointingEvent): PointingEventResult | void;
-  // biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
-  keyDown?(e: KeyEvent): KeyEventResult | void;
-  // biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
-  keyUp?(e: KeyEvent): KeyEventResult | void;
-}
-
-export interface CanvasViewController extends CanvasSensor {
-  render(context: CanvasRenderingContext2D, size: Size): void;
-}
-
-function canvasPoint(
-  target: EventTarget | null,
-  clientX: number,
-  clientY: number
-): Point {
-  if (target instanceof Element) {
-    const bounds = Rectangle.fromDOMRect(target.getBoundingClientRect());
-    return makePt(clientX - bounds.left, clientY - bounds.top);
-  }
-  return makePt(clientX, clientY);
-}
-
 export function IconControllerView(props: CanvasViewProps): JSX.Element {
   const { controller, className } = props;
   const [cursor, setCursor] = useState<string>("default");
-  const [mouseCurrentlyDown, setMouseCurrentlyDown] = useState<boolean>(false);
 
-  const getController = useCallback(() => controller, [controller]);
+  const handleMouseUp = (e: MouseEvent) => {
+    const ctl = controller;
 
-  const handleMouseUp = useCallback(
-    (e: MouseEvent) => {
-      const ctl = getController();
-
-      if (ctl.pointingGestureEnd) {
-        const point = canvasPoint(e.target, e.clientX, e.clientY);
-        const { cursor: c } =
-          ctl.pointingGestureEnd({ point, touch: false }) || {};
-        setCursor(c || "default");
-      }
-    },
-    [getController]
-  );
+    if (ctl.pointingGestureEnd) {
+      const point = canvasPoint(e.target, e.clientX, e.clientY);
+      const { cursor: c } =
+        ctl.pointingGestureEnd({ point, touch: false }) || {};
+      setCursor(c || "default");
+    }
+  };
 
   // biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
   function adoptCursor(result: PointingEventResult | void) {
@@ -90,8 +39,6 @@ export function IconControllerView(props: CanvasViewProps): JSX.Element {
 
       adoptCursor(result);
     }
-
-    setMouseCurrentlyDown(true);
   }
 
   function mouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -150,7 +97,12 @@ export function IconControllerView(props: CanvasViewProps): JSX.Element {
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
+    const mouseUpCatcher = (e: MouseEvent) => {
+      handleMouseUp(e);
+    };
+
     function keyDown(e: KeyboardEvent) {
       if (!ignoreKey() && controller.keyDown) {
         const result = controller.keyDown({ key: e.key });
@@ -174,25 +126,16 @@ export function IconControllerView(props: CanvasViewProps): JSX.Element {
     const keyDownCatcher = (e: KeyboardEvent) => keyDown(e);
     const keyUpCatcher = (e: KeyboardEvent) => keyUp(e);
 
+    document.body.addEventListener("mouseup", mouseUpCatcher);
     document.addEventListener("keyup", keyUpCatcher);
     document.addEventListener("keydown", keyDownCatcher);
 
     return () => {
+      document.body.removeEventListener("mouseup", mouseUpCatcher);
       document.removeEventListener("keyup", keyUpCatcher);
       document.removeEventListener("keydown", keyDownCatcher);
     };
   }, [controller]);
-
-  useEffect(() => {
-    if (mouseCurrentlyDown) {
-      const mouseUpCatcher = (e: MouseEvent) => {
-        handleMouseUp(e);
-        document.body.removeEventListener("mouseup", mouseUpCatcher);
-        setMouseCurrentlyDown(false);
-      };
-      document.body.addEventListener("mouseup", mouseUpCatcher);
-    }
-  }, [mouseCurrentlyDown, handleMouseUp]);
 
   const render = (params: RenderParams) => {
     controller.render(params.context, params.size);
@@ -218,4 +161,16 @@ function ignoreKey(): boolean {
   return (
     !!focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")
   );
+}
+
+function canvasPoint(
+  target: EventTarget | null,
+  clientX: number,
+  clientY: number
+): Point {
+  if (target instanceof Element) {
+    const bounds = Rectangle.fromDOMRect(target.getBoundingClientRect());
+    return makePt(clientX - bounds.left, clientY - bounds.top);
+  }
+  return makePt(clientX, clientY);
 }

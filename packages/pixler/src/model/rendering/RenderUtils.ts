@@ -5,14 +5,8 @@ import { createCheckerPattern } from "./checker";
 
 export type BitmapData = [Uint8ClampedArray, number];
 
-// const darkMode = () => darkModeOn();
-// const CHECKER_SIZE = 5;
-// const checkerEven: () => ColorTuple = () => Color.transparent.tupleInt8;
-// const checkerOdd: () => ColorTuple = () =>
-//   Color.fromHex(darkMode() ? "fff" : "000").withAlpha(0.05).tupleInt8;
-
-export function darkModeOn(): boolean | undefined {
-  if (window.matchMedia) {
+export function getMediaDarkModeOn(): boolean | undefined {
+  if (window?.matchMedia) {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   }
   return undefined;

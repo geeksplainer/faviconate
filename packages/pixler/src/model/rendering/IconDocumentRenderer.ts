@@ -4,17 +4,9 @@ import { Color } from "../util/Color";
 import { MemoryError } from "../errors";
 import { MarchingAnts } from "./MarchingAnts";
 import { IconService } from "../IconService";
-import {
-  createBitmapCanvas,
-  createLegoPegOverlay,
-  darkModeOn,
-} from "./RenderUtils";
+import { createBitmapCanvas, createLegoPegOverlay } from "./RenderUtils";
 import { createCheckerPattern } from "./checker";
 
-const dark = () => darkModeOn();
-const gridOut = () => Color.fromHex(dark() ? "fff" : "000").withAlpha(0.05);
-const gridLight = () => Color.fromHex(dark() ? "fff" : "000").withAlpha(0.05);
-const plateBg = () => Color.fromHex(dark() ? "fff" : "000").withAlpha(0.05);
 const CORNER_RADIUS = 0;
 
 const CLOCK_MOD = 4;
@@ -35,21 +27,18 @@ export interface IconDocumentRendererParams {
   drawBackground?: boolean;
   drawGrid?: boolean;
   mode?: RenderMode;
+  checkerColorA: Color;
+  checkerColorB: Color;
+  gridColor: Color;
 }
 
 export class IconDocumentRenderer {
   private static clock = 0;
-
   private static clockReminder = 0;
-
   private static checkerCanvas: HTMLCanvasElement | null = null;
-
   private static legoCanvas: Record<string, HTMLCanvasElement> = {};
-
   private static pixelsBuffer: HTMLCanvasElement | null = null;
-
   private static pixelsContext: CanvasRenderingContext2D | null = null;
-
   private static legoPeg: HTMLImageElement | null;
 
   static getPixelsBuffer(canvasSize: Size): {
@@ -77,11 +66,21 @@ export class IconDocumentRenderer {
     };
   }
 
+  static clearCheckerCanvasCache() {
+    IconDocumentRenderer.checkerCanvas = null;
+  }
+
   static getCheckerPattern(
-    context: CanvasRenderingContext2D
+    context: CanvasRenderingContext2D,
+    colorA: Color,
+    colorB: Color
   ): CanvasPattern | null {
     if (!IconDocumentRenderer.checkerCanvas) {
-      const pattern = createCheckerPattern();
+      const pattern = createCheckerPattern({
+        tileSize: 5,
+        colorA: colorA.tupleInt8,
+        colorB: colorB.tupleInt8,
+      });
       IconDocumentRenderer.checkerCanvas = createBitmapCanvas(pattern);
     }
 
@@ -100,9 +99,8 @@ export class IconDocumentRenderer {
 
   static getLegoPegImage(): HTMLImageElement {
     if (!IconDocumentRenderer.legoPeg) {
-      // eslint-disable-next-line no-multi-assign
-      const img = (IconDocumentRenderer.legoPeg =
-        document.createElement("img"));
+      IconDocumentRenderer.legoPeg = document.createElement("img");
+      const img = IconDocumentRenderer.legoPeg;
       img.src = "/lego-peg.png";
     }
     if (!IconDocumentRenderer.legoPeg) {
@@ -257,7 +255,7 @@ export class IconDocumentRenderer {
     }
   }
 
-  private renderGrid(pixelSize: Size) {
+  private renderGrid(pixelSize: Size, color: Color) {
     const { document, context } = this.params;
     const ctx = context;
     const { icon } = document;
@@ -280,7 +278,7 @@ export class IconDocumentRenderer {
       y += pixelSize.height;
     }
 
-    ctx.strokeStyle = gridLight().cssRgba;
+    ctx.strokeStyle = color.cssRgba;
     ctx.stroke();
   }
 
@@ -299,8 +297,12 @@ export class IconDocumentRenderer {
   }
 
   private renderChecker() {
-    const { context } = this.params;
-    const pattern = IconDocumentRenderer.getCheckerPattern(context);
+    const { context, checkerColorA, checkerColorB } = this.params;
+    const pattern = IconDocumentRenderer.getCheckerPattern(
+      context,
+      checkerColorA,
+      checkerColorB
+    );
 
     if (!pattern) {
       return;
@@ -352,8 +354,15 @@ export class IconDocumentRenderer {
   }
 
   render() {
-    const { document, drawGrid, drawBackground, mode, context, plateBounds } =
-      this.params;
+    const {
+      document,
+      drawGrid,
+      drawBackground,
+      mode,
+      context,
+      plateBounds,
+      gridColor,
+    } = this.params;
     const pixelSize = makeSz(
       this.bounds.width / document.icon.width,
       this.bounds.height / document.icon.height
@@ -374,7 +383,7 @@ export class IconDocumentRenderer {
     this.renderPixels(pixelSize);
 
     if (drawGrid) {
-      this.renderGrid(pixelSize);
+      this.renderGrid(pixelSize, gridColor);
     }
 
     // this.renderFrame();

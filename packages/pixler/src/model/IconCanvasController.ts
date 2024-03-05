@@ -4,8 +4,10 @@ import {
   KeyEventResult,
   PointingEvent,
   PointingEventResult,
-} from "../components/IconControllerView";
-import { IconDocument, IconEditor, IconEditorTool } from "./IconEditor";
+  IconDocument,
+  IconEditorTool,
+} from "../models";
+import { cloneIconDocument } from "./IconEditor";
 import { IconService } from "./IconService";
 import {
   IconDocumentRenderer,
@@ -19,7 +21,6 @@ import {
   scaleToContain,
   Size,
 } from "./util/Rectangle";
-import { SelectionTool } from "./tools/SelectionTool";
 import { Icon } from "./Icon";
 import { ClipboardEmptyError, ClipboardService } from "./ClipboardService";
 import { NoSelectionError } from "./errors";
@@ -29,7 +30,6 @@ import { uuid } from "./util/uuid";
 const MIME_PNG = "image/png";
 
 export interface PasteResult {
-  tool?: IconEditorTool;
   success: boolean;
   warnings: string[];
 }
@@ -41,87 +41,99 @@ export type ColorPickCallback = (
   colorHover?: Color
 ) => void;
 
-export class IconCanvasController implements CanvasViewController {
-  readonly id = uuid();
+export type IconCanvasProps = {
+  document: IconDocument;
+  renderParams: Partial<IconDocumentRendererParams> &
+    Pick<
+      IconDocumentRendererParams,
+      "gridColor" | "checkerColorA" | "checkerColorB"
+    >;
+  setDocument: (doc: IconDocument) => void;
+  commit: () => void;
+  rollback: () => void;
+  tool?: IconEditorTool;
+  colorPicking?: boolean;
+  onColorPicked?: ColorPickCallback;
+};
 
-  readonly editor: IconEditor;
+export type IconCanvasController = CanvasViewController & {
+  document: IconDocument;
+  tool?: IconEditorTool;
+  cloneDocument: () => IconDocument;
+  copy: () => Promise<void>;
+  cut: () => Promise<void>;
+  paste: () => Promise<PasteResult>;
+  importFile: (file: Blob) => Promise<void>;
+  downloadAs: (format: DownloadFormat, icons?: Icon[] | null) => Promise<void>;
+  pointToData: (p: Point) => number;
+};
 
-  private _tool: IconEditorTool | null = null;
+export function createIconCanvasController({
+  document,
+  renderParams,
+  setDocument,
+  commit,
+  rollback,
+  tool,
+  colorPicking,
+  onColorPicked,
+}: IconCanvasProps): IconCanvasController {
+  const id = uuid();
+  const iconSize = makeSz(document.icon.width, document.icon.height);
+  let previewBounds: Rectangle = Rectangle.empty;
+  let previewPixelSize = 0;
 
-  private previewBounds: Rectangle = Rectangle.empty;
+  const cloneDocument = (): IconDocument => {
+    return cloneIconDocument(document);
+  };
 
-  private previewPixelSize = 0;
-
-  private _colorPicker?: ColorPickCallback;
-
-  constructor(
-    readonly document?: IconDocument,
-    readonly renderParams?: Partial<IconDocumentRendererParams>
-  ) {
-    this.editor = document
-      ? new IconEditor(document)
-      : new IconEditor({
-          icon: IconService.newIcon(16, 16),
-        });
-  }
-
-  colorFromPoint(p: Point): Color | null {
-    const i = this.pointToData(p);
+  const colorFromPoint = (p: Point): Color | null => {
+    const i = pointToData(p);
 
     if (i < 0) {
       return null;
     }
 
-    const { data } = this.editor.document.icon;
+    const { data } = document.icon;
     return Color.fromTupleInt8([
-      data[i],
-      data[i + 1],
-      data[i + 2],
-      data[i + 3],
+      data[i] || 0,
+      data[i + 1] || 0,
+      data[i + 2] || 0,
+      data[i + 3] || 0,
     ]);
-  }
+  };
 
-  colorPicker(picker: ColorPickCallback | undefined) {
-    this._colorPicker = picker;
-  }
-
-  async copy(): Promise<void> {
-    if (!this.editor.document.selectionSprite) {
+  const copy = async (): Promise<void> => {
+    if (!document.selectionSprite) {
       return;
     }
 
     const blob = await IconService.asBlobWithMime(
-      this.editor.document.selectionSprite,
+      document.selectionSprite,
       MIME_PNG
     );
 
     await ClipboardService.copyBlob(blob, MIME_PNG);
-  }
+  };
 
-  async cut(): Promise<void> {
-    if (!this.editor.document.selectionBuffer) {
+  const cut = async (): Promise<void> => {
+    if (!document.selectionBuffer) {
       throw new NoSelectionError();
     }
 
-    await this.copy();
+    await copy();
 
-    this.editor.transact({
-      ...this.editor.cloneDocument(),
-      icon: this.editor.document.selectionBuffer,
-      selectionRegion: undefined,
-      selectionSprite: undefined,
-      selectionBuffer: undefined,
-    });
-  }
+    setDocument(cloneIconDocument(document));
+    commit();
+  };
 
-  async paste(): Promise<PasteResult> {
+  const paste = async (): Promise<PasteResult> => {
     let success = false;
-    let tool: IconEditorTool | undefined;
     let warnings: string[] = [];
 
     try {
       const blob = await ClipboardService.pasteBlob();
-      tool = await this.importFile(blob);
+      await importFile(blob);
       success = true;
     } catch (error) {
       if (error instanceof ClipboardEmptyError) {
@@ -132,52 +144,41 @@ export class IconCanvasController implements CanvasViewController {
       }
     }
 
-    return { success, tool, warnings };
-  }
+    return { success, warnings };
+  };
 
-  async downloadAs(
+  const downloadAs = async (
     format: DownloadFormat,
     icons: Icon[] | null = null
-  ): Promise<void> {
+  ): Promise<void> => {
     let blob: Blob;
     let name: string;
 
     if (format === "png") {
-      blob = await IconService.asBlobWithMime(
-        this.editor.document.icon,
-        MIME_PNG
-      );
+      blob = await IconService.asBlobWithMime(document.icon, MIME_PNG);
       name = "favicon.png";
     } else {
-      blob = await IconService.asIcoBlob(icons || [this.editor.document.icon]);
+      blob = await IconService.asIcoBlob(icons || [document.icon]);
       name = "favicon.ico";
     }
 
-    const a = document.createElement("a");
+    const a = window.document.createElement("a");
 
     a.href = URL.createObjectURL(blob);
     a.download = name;
     a.click();
-  }
+  };
 
-  async importFile(file: Blob): Promise<SelectionTool> {
-    const { icon } = this.editor.document;
+  const importFile = async (file: Blob): Promise<void> => {
+    const { icon } = document;
     const size = makeSz(icon.width, icon.height);
     const sprite = await IconService.fromFile(file, size);
 
-    this.pasteSprite(sprite);
+    pasteSprite(sprite);
+  };
 
-    if (this.tool instanceof SelectionTool) {
-      return this.tool;
-    }
-
-    const tool = new SelectionTool(this);
-    this.tool = tool;
-    return tool;
-  }
-
-  pasteSprite(sprite: Icon) {
-    const newDoc = this.editor.cloneDocument();
+  const pasteSprite = (sprite: Icon) => {
+    const newDoc = cloneIconDocument(document);
     const containerRec = new Rectangle(
       0,
       0,
@@ -197,114 +198,117 @@ export class IconCanvasController implements CanvasViewController {
       newDoc.selectionRegion
     );
 
-    this.editor.begin();
-    this.editor.setDocument(newDoc);
-    this.editor.commit();
-  }
+    setDocument(newDoc);
+    commit();
+  };
 
-  pixelToData(pixel: Point): number {
-    const { icon } = this.editor.document;
+  const pixelToData = (pixel: Point): number => {
+    const { icon } = document;
     return icon.width * 4 * pixel.y + pixel.x * 4;
-  }
+  };
 
-  pointToPixel(p: Point): Point | null {
-    if (!this.previewBounds.contains(p)) {
+  const pointToPixel = (p: Point): Point | null => {
+    if (!previewBounds.contains(p)) {
       return null;
     }
 
-    const left = p.x - this.previewBounds.left;
-    const top = p.y - this.previewBounds.top;
+    const left = p.x - previewBounds.left;
+    const top = p.y - previewBounds.top;
 
     return makePt(
-      Math.floor(left / this.previewPixelSize),
-      Math.floor(top / this.previewPixelSize)
+      Math.floor(left / previewPixelSize),
+      Math.floor(top / previewPixelSize)
     );
-  }
+  };
 
-  pointToData(p: Point): number {
+  const pointToData = (p: Point): number => {
     // Deflation prevents round-errors
-    if (!this.previewBounds.deflate(1, 1).contains(p)) {
+    if (!previewBounds.deflate(1, 1).contains(p)) {
       return -1;
     }
 
-    const pixel = this.pointToPixel(p);
+    const pixel = pointToPixel(p);
 
     if (pixel) {
-      return this.pixelToData(pixel);
+      return pixelToData(pixel);
     }
 
     return -1;
-  }
+  };
 
-  pointingGestureStart(e: PointingEvent): PointingEventResult | void {
-    if (this._colorPicker) {
-      const color = this.colorFromPoint(e.point);
+  const pointingGestureStart = (
+    e: PointingEvent
+  ): PointingEventResult | undefined => {
+    if (colorPicking) {
+      const color = colorFromPoint(e.point);
 
       if (color) {
-        this._colorPicker(color);
-        this._colorPicker = undefined;
+        onColorPicked?.(color);
       }
 
       return;
     }
 
-    if (this.tool?.pointingGestureStart) {
+    if (tool?.pointingGestureStart) {
       // eslint-disable-next-line consistent-return
-      return this.tool.pointingGestureStart(e);
+      return tool.pointingGestureStart({ ...e, pointToData, pointToPixel });
     }
-  }
+  };
 
-  pointingGestureMove(e: PointingEvent): PointingEventResult | void {
-    if (this._colorPicker) {
-      const color = this.colorFromPoint(e.point);
+  const pointingGestureMove = (
+    e: PointingEvent
+  ): PointingEventResult | undefined => {
+    if (colorPicking) {
+      const color = colorFromPoint(e.point);
 
       if (color) {
-        this._colorPicker(null, color);
+        onColorPicked?.(color);
       }
 
       return;
     }
 
-    if (this.tool?.pointingGestureMove) {
+    if (tool?.pointingGestureMove) {
       // eslint-disable-next-line consistent-return
-      return this.tool.pointingGestureMove(e);
+      return tool.pointingGestureMove({ ...e, pointToData, pointToPixel });
     }
-  }
+  };
 
-  // eslint-disable-next-line consistent-return
-  pointingGestureEnd(e: PointingEvent): PointingEventResult | void {
-    if (this.tool?.pointingGestureEnd) {
-      return this.tool.pointingGestureEnd(e);
+  const pointingGestureEnd = (
+    e: PointingEvent
+  ): PointingEventResult | undefined => {
+    if (tool?.pointingGestureEnd) {
+      return tool.pointingGestureEnd({ ...e, pointToData, pointToPixel });
     }
-  }
+  };
 
-  // eslint-disable-next-line consistent-return
-  keyDown(e: KeyEvent): KeyEventResult | void {
-    if (this.tool?.keyDown) {
-      return this.tool.keyDown(e);
+  const keyDown = (e: KeyEvent): KeyEventResult | undefined => {
+    if (tool?.keyDown) {
+      return tool.keyDown(e);
     }
-  }
+  };
 
-  // eslint-disable-next-line consistent-return
-  keyUp(e: KeyEvent): KeyEventResult | void {
-    if (this.tool?.keyUp) {
-      return this.tool.keyUp(e);
+  const keyUp = (e: KeyEvent): KeyEventResult | undefined => {
+    if (tool?.keyUp) {
+      return tool.keyUp(e);
     }
-  }
+  };
 
-  renderMeasurements(size: Size): {
+  const renderMeasurements = (
+    size: Size
+  ): {
     plateBounds: Rectangle;
     previewSize: Size;
     pixelLength: number;
-  } {
-    const { icon } = this.editor.document;
+  } => {
+    const { icon } = document;
     const cvBounds = new Rectangle(0, 0, size.width, size.height);
     const previewArea = cvBounds.deflate(0, 0);
-    const previewSize = scaleToContain(previewArea.size, this.iconSize);
-    // eslint-disable-next-line no-multi-assign
-    const pixelLength = (this.previewPixelSize =
+    const previewSize = scaleToContain(previewArea.size, iconSize);
+    previewPixelSize =
       Math.min(previewSize.width, previewSize.height) /
-      Math.min(icon.width, icon.height));
+      Math.min(icon.width, icon.height);
+    const pixelLength = previewPixelSize;
     const plateBounds = new Rectangle(
       0,
       0,
@@ -313,52 +317,43 @@ export class IconCanvasController implements CanvasViewController {
     ).centerAt(cvBounds.center);
 
     return { plateBounds, previewSize, pixelLength };
-  }
+  };
 
-  render(context: CanvasRenderingContext2D, size: Size) {
+  const render = (context: CanvasRenderingContext2D, size: Size) => {
     context.clearRect(0, 0, size.width, size.height);
 
-    if (this.editor.document) {
-      const { plateBounds, pixelLength } = this.renderMeasurements(size);
+    if (document) {
+      const { plateBounds, pixelLength } = renderMeasurements(size);
 
-      this.previewPixelSize = pixelLength;
-      this.previewBounds = plateBounds;
+      previewPixelSize = pixelLength;
+      previewBounds = plateBounds;
 
       const renderer = new IconDocumentRenderer({
-        ...this.renderParams,
-        document: this.editor.document,
+        ...renderParams,
+        document: document,
         context,
         plateBounds,
       });
 
       renderer.render();
     }
-  }
+  };
 
-  get iconSize(): Size {
-    return makeSz(
-      this.editor.document.icon.width,
-      this.editor.document.icon.height
-    );
-  }
-
-  get tool(): IconEditorTool | null {
-    return this._tool;
-  }
-
-  set tool(value: IconEditorTool | null) {
-    if (value === this._tool) {
-      return;
-    }
-
-    if (this._tool?.deactivate) {
-      this._tool.deactivate();
-    }
-
-    this._tool = value;
-
-    if (this._tool?.activate) {
-      this._tool.activate();
-    }
-  }
+  return {
+    document,
+    tool,
+    cloneDocument,
+    copy,
+    cut,
+    paste,
+    importFile,
+    downloadAs,
+    pointingGestureStart,
+    pointingGestureMove,
+    pointingGestureEnd,
+    keyDown,
+    keyUp,
+    render,
+    pointToData,
+  };
 }

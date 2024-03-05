@@ -9,19 +9,13 @@ export class UnsavedChangesError extends Error {}
 
 export class Editor<T> {
   private _currentTransaction: EditorTransaction<T> | null = null;
-
   private _document: T;
-
   private _hasChanges = false;
-
   private _pristine = true;
-
   private readonly undoStack: EditorTransaction<T>[] = [];
-
   private readonly redoStack: EditorTransaction<T>[] = [];
 
   public documentChanged: (() => void) | null = null;
-
   public documentSubmitted: (() => void) | null = null;
 
   constructor(document: T) {
@@ -36,8 +30,7 @@ export class Editor<T> {
     const top = this.redoStack.pop();
 
     if (top) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.undoStack.push({ documentState: this.document! });
+      this.undoStack.push({ documentState: this.document });
       this._document = top.documentState;
 
       if (this.documentSubmitted) {

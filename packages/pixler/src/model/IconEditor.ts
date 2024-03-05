@@ -1,35 +1,16 @@
-import { Icon } from "./Icon";
 import { Editor } from "./Editor";
-import { CanvasSensor } from "../components/IconControllerView";
-import { Rectangle } from "./util/Rectangle";
+import { CanvasSensor, IconDocument } from "../models";
 import { IconService } from "./IconService";
-import { Color } from "./util/Color";
 
-export interface IconDocument {
-  icon: Icon;
-  selectionRegion?: Rectangle;
-  selectionBuffer?: Icon;
-  selectionSprite?: Icon;
-}
+export class IconEditor extends Editor<IconDocument> {}
 
-export interface IconEditorTool extends CanvasSensor {
-  activate?: () => void;
-  deactivate?: () => void;
-  useColor?: (color: Color) => void;
-}
+export function cloneIconDocument(doc: IconDocument): IconDocument {
+  const documentObject = doc;
 
-export class IconEditor extends Editor<IconDocument> {
-  cloneDocument(doc?: IconDocument): IconDocument {
-    if (typeof doc === "undefined") {
-      // eslint-disable-next-line no-param-reassign
-      doc = this.document;
-    }
+  const newDocument = {
+    ...documentObject,
+    icon: IconService.clone(documentObject.icon),
+  };
 
-    const newDocument = {
-      ...doc,
-      icon: IconService.clone(doc.icon),
-    };
-
-    return newDocument;
-  }
+  return newDocument;
 }

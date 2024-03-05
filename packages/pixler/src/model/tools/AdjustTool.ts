@@ -1,4 +1,4 @@
-import { IconDocument, IconEditorTool } from "../IconEditor";
+import { IconDocument, IconEditorTool, cloneIconDocument } from "../IconEditor";
 import { IconCanvasController } from "../IconCanvasController";
 import { Color } from "../util/Color";
 import { ImageAdjustService } from "../ImageAdjustService";
@@ -17,21 +17,17 @@ export class AdjustTool implements IconEditorTool {
 
   private lastProps?: AdjustProperties;
 
-  constructor(readonly controller: IconCanvasController) {}
-
-  activate() {
-    this.controller.editor.begin();
-    this.original = this.controller.editor.cloneDocument();
+  constructor(readonly controller: IconCanvasController) {
+    this.original = controller.cloneDocument();
   }
 
   deactivate() {
-    this.controller.editor.rollback();
+    this.controller.rollback();
   }
 
   apply() {
-    this.controller.editor.commit();
-    this.original = this.controller.editor.cloneDocument();
-    this.controller.editor.begin();
+    this.controller.commit();
+    this.original = this.controller.cloneDocument();
   }
 
   updateAdjustments(props: AdjustProperties): boolean {
@@ -59,7 +55,7 @@ export class AdjustTool implements IconEditorTool {
       return false;
     }
 
-    const doc = this.controller.editor.cloneDocument(this.original);
+    const doc = cloneIconDocument(this.original);
     const { icon } = doc;
     const { data } = icon;
     const { palette, contrast, brightness, kernel, serpentine } = props;
@@ -83,7 +79,7 @@ export class AdjustTool implements IconEditorTool {
       );
     }
 
-    this.controller.editor.setDocument(doc);
+    this.controller.setDocument(doc);
 
     this.lastProps = props;
 

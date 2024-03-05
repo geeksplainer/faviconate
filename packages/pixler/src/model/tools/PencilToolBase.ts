@@ -1,8 +1,5 @@
-import { IconEditorTool } from "../IconEditor";
-import {
-  PointingEvent,
-  PointingEventResult,
-} from "../../components/IconControllerView";
+import { IconEditorTool, cloneIconDocument } from "../IconEditor";
+import { PointingEvent, PointingEventResult } from "../../models";
 import { IconCanvasController } from "../IconCanvasController";
 import { Point } from "../util/Rectangle";
 import { Color } from "../util/Color";
@@ -22,7 +19,7 @@ export class PencilToolBase extends PrimaryColorTool implements IconEditorTool {
       return;
     }
 
-    const newState = this.controller.editor.cloneDocument();
+    const newState = cloneIconDocument(this.controller.document);
     const { data } = newState.icon;
 
     data[index] = this.color.r;
@@ -30,27 +27,27 @@ export class PencilToolBase extends PrimaryColorTool implements IconEditorTool {
     data[index + 2] = this.color.b;
     data[index + 3] = Math.round(this.color.a * 255);
 
-    this.controller.editor.setDocument(newState);
+    this.controller.setDocument(newState);
   }
 
-  pointingGestureStart(e: PointingEvent): PointingEventResult | void {
+  pointingGestureStart(e: PointingEvent): PointingEventResult | undefined {
     this.drawing = true;
 
-    if (!this.controller.editor.currentTransaction) {
-      this.controller.editor.begin();
-      this.drawAt(e.point);
-    }
+    this.drawAt(e.point);
+    return;
   }
 
-  pointingGestureMove(e: PointingEvent): PointingEventResult | void {
+  pointingGestureMove(e: PointingEvent): PointingEventResult | undefined {
     if (this.drawing) {
       this.drawAt(e.point);
     }
+    return;
   }
 
-  pointingGestureEnd(): PointingEventResult | void {
+  pointingGestureEnd(): PointingEventResult | undefined {
     this.drawing = false;
-    this.controller.editor.commit();
+    this.controller.commit();
+    return;
   }
 
   useColor(color: Color) {

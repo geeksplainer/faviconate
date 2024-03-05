@@ -4,7 +4,7 @@ import {
   KeyEventResult,
   PointingEvent,
   PointingEventResult,
-} from "../../components/IconControllerView";
+} from "../../models";
 import { makePt, makeSz, Point, Rectangle } from "../util/Rectangle";
 import { IconCanvasController } from "../IconCanvasController";
 import { Icon } from "../Icon";
@@ -15,20 +15,13 @@ export type SelectionDragMode = "sprite" | "area";
 
 export class SelectionTool implements IconEditorTool {
   private selecting = false;
-
   private dragging = false;
-
   private dragOffset: Point = makePt(0, 0);
-
   private startPixel = makePt(0, 0);
-
-  readonly editor: IconEditor;
 
   _dragMode: SelectionDragMode = "sprite";
 
-  constructor(readonly controller: IconCanvasController) {
-    this.editor = controller.editor;
-  }
+  constructor(readonly controller: IconCanvasController) {}
 
   private clipOutSelection(sourceDocument?: IconDocument): {
     buffer: Icon;
@@ -54,7 +47,7 @@ export class SelectionTool implements IconEditorTool {
   }
 
   private updateSelRegion(a: Point, b: Point) {
-    const newDoc = this.editor.cloneDocument();
+    const newDoc = this.controller.cloneDocument();
 
     newDoc.selectionRegion = Rectangle.fromLTRB(
       Math.round(Math.min(a.x, b.x)),
@@ -63,7 +56,7 @@ export class SelectionTool implements IconEditorTool {
       Math.round(Math.max(a.y, b.y)) + 1
     );
 
-    this.editor.setDocument(newDoc);
+    this.controller.setDocument(newDoc);
   }
 
   private selectionDragEnded() {
@@ -72,6 +65,7 @@ export class SelectionTool implements IconEditorTool {
     }
 
     this.selectRegion(this.document.selectionRegion, false);
+    this.controller.commit();
 
     this.selecting = false;
   }
@@ -136,7 +130,7 @@ export class SelectionTool implements IconEditorTool {
       const { selectionBuffer, selectionSprite } = this.document;
 
       newDoc = {
-        ...this.editor.cloneDocument(),
+        ...this.controller.cloneDocument(),
         selectionRegion,
         icon: IconService.blend(
           selectionBuffer,
@@ -147,18 +141,14 @@ export class SelectionTool implements IconEditorTool {
       };
     } else {
       newDoc = {
-        ...this.editor.cloneDocument(),
+        ...this.controller.cloneDocument(),
         selectionRegion,
         selectionBuffer: undefined,
         selectionSprite: undefined,
       };
     }
 
-    if (this.editor.currentTransaction) {
-      this.editor.setDocument(newDoc);
-    } else {
-      this.editor.transact(newDoc);
-    }
+    this.controller.setDocument(newDoc);
   }
 
   private offsetSelection(x: number, y: number) {
@@ -179,6 +169,7 @@ export class SelectionTool implements IconEditorTool {
       current.left + x + implicitX,
       current.top + y + implicitY
     );
+    this.controller.commit();
   }
 
   private saveDragOffset(p: Point) {
@@ -194,7 +185,7 @@ export class SelectionTool implements IconEditorTool {
 
   selectRegion(selectionRegion: Rectangle, transact = true) {
     let doc: IconDocument = {
-      ...this.editor.cloneDocument(),
+      ...this.controller.cloneDocument(),
       selectionRegion,
     };
 
@@ -208,20 +199,17 @@ export class SelectionTool implements IconEditorTool {
       };
     }
 
-    if (transact) {
-      this.editor.transact(doc);
-    } else {
-      this.editor.setDocument(doc);
-    }
+    this.controller.setDocument(doc);
   }
 
   selectAll() {
     const { icon } = this.document;
     this.selectRegion(Rectangle.fromSize(makeSz(icon.width, icon.height)));
+    this.controller.commit();
   }
 
   clearSelection() {
-    const newDoc = this.editor.cloneDocument();
+    const newDoc = this.controller.cloneDocument();
 
     // eslint-disable-next-line no-multi-assign
     newDoc.selectionRegion =
@@ -231,16 +219,16 @@ export class SelectionTool implements IconEditorTool {
       newDoc.selectionBuffer =
         undefined;
 
-    this.editor.begin();
-    this.editor.setDocument(newDoc);
-    this.editor.commit();
+    this.controller.setDocument(newDoc);
+    this.controller.commit();
   }
 
   cropToSelection() {
-    const sprite = this.editor.document.selectionSprite;
+    const sprite = this.controller.document.selectionSprite;
 
     if (sprite) {
-      this.editor.transact({ icon: sprite });
+      this.controller.setDocument({ icon: sprite });
+      this.controller.commit();
     } else {
       throw new NoSelectionError();
     }
@@ -253,7 +241,7 @@ export class SelectionTool implements IconEditorTool {
   }
 
   deleteSelection() {
-    const newDoc = this.editor.cloneDocument();
+    const newDoc = this.controller.cloneDocument();
 
     if (!newDoc.selectionBuffer) {
       throw new NoSelectionError();
@@ -268,17 +256,15 @@ export class SelectionTool implements IconEditorTool {
       newDoc.selectionRegion =
         undefined;
 
-    this.editor.begin();
-    this.editor.setDocument(newDoc);
-    this.editor.commit();
+    this.controller.setDocument(newDoc);
+    this.controller.commit();
   }
 
-  pointingGestureStart(e: PointingEvent): PointingEventResult | void {
+  pointingGestureStart(e: PointingEvent): PointingEventResult | undefined {
     const p = this.controller.pointToPixel(e.point);
 
     if (p) {
       this.startPixel = p;
-      this.editor.begin();
 
       if (this.pixelIsInsideSelection(p)) {
         this.dragging = true;
@@ -287,9 +273,11 @@ export class SelectionTool implements IconEditorTool {
         this.selecting = true;
       }
     }
+
+    return;
   }
 
-  pointingGestureEnd(e: PointingEvent): PointingEventResult | void {
+  pointingGestureEnd(e: PointingEvent): PointingEventResult | undefined {
     const p = this.controller.pointToPixel(e.point);
 
     if (this.selecting) {
@@ -298,10 +286,7 @@ export class SelectionTool implements IconEditorTool {
 
     if (this.dragging) {
       this.dragEnded();
-    }
-
-    if (this.editor.currentTransaction) {
-      this.editor.commit();
+      this.controller.commit();
     }
 
     if (this.pixelIsInsideSelection(p)) {
@@ -311,7 +296,7 @@ export class SelectionTool implements IconEditorTool {
     throw new NoSelectionError();
   }
 
-  pointingGestureMove(e: PointingEvent): PointingEventResult | void {
+  pointingGestureMove(e: PointingEvent): PointingEventResult | undefined {
     const p = this.controller.pointToPixel(e.point);
 
     if (p) {
@@ -327,7 +312,7 @@ export class SelectionTool implements IconEditorTool {
     return { cursor: "crosshair" };
   }
 
-  keyDown(e: KeyEvent): KeyEventResult | void {
+  keyDown(e: KeyEvent): KeyEventResult | undefined {
     if (e.key === "Escape") {
       this.clearSelection();
     } else if (e.key === "Delete" || e.key === "Backspace") {
@@ -341,10 +326,11 @@ export class SelectionTool implements IconEditorTool {
     } else if (e.key === "ArrowDown") {
       this.offsetSelection(0, 1);
     }
+    return;
   }
 
   get document(): IconDocument {
-    return this.editor.document;
+    return this.controller.document;
   }
 
   get dragMode(): SelectionDragMode {
