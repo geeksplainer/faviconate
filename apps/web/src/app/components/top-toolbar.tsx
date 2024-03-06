@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import {
   Eraser,
-  Github,
   Grid2X2,
   Grid3X3,
   MousePointer,
@@ -62,11 +61,11 @@ export function TopToolbar() {
         >
           <Eraser size={16} />
         </Button>
-        <Separator orientation="vertical" className="h-8" />
+        <Separator orientation="vertical" className="h-8 hidden md:flex" />
         <Button
           variant="ghost"
           size="icon"
-          className={cn(grid && "bg-secondary")}
+          className={cn(grid && "bg-secondary", "hidden md:flex")}
           onClick={() => toggleGrid()}
         >
           <Grid3X3 size={16} />
@@ -74,7 +73,7 @@ export function TopToolbar() {
         <Button
           variant="ghost"
           size="icon"
-          className={cn(checker && "bg-secondary")}
+          className={cn(checker && "bg-secondary", "hidden md:flex")}
           onClick={() => toggleChecker()}
         >
           <Grid2X2 size={16} />
