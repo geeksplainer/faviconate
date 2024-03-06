@@ -1,31 +1,32 @@
 "use client";
-import { ModeToggle } from "./components/mode-toggle";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { cn } from "@/lib/utils";
 import { Sidebar } from "./components/sidebar";
-import { IconArea } from "./components/icon-area";
-import { TopToolbar } from "./components/top-toolbar";
-import { BottomToolbar } from "./components/bottom-toolbar";
-import { Commands } from "@/components/commands";
+import { Workspace } from "./components/workspace";
+import { useFaviconate } from "@/components/FaviconateContext";
 
 export default function Home() {
+  const { sidebarVisible } = useFaviconate();
   return (
-    <main className=" w-svw h-svh ">
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={80} className="flex flex-col relative">
-          <TopToolbar />
-          <IconArea className="flex-1" />
-          <BottomToolbar />
-          <ModeToggle />
-        </ResizablePanel>
-        <ResizableHandle />
-        <ResizablePanel defaultSize={20}>
+    <main className="w-svw h-svh">
+      <div className="hidden w-full h-full md:flex">
+        <div className="flex-1 flex flex-col">
+          <Workspace />
+        </div>
+        <div className={cn("w-[300px] h-full border-l borderl-l-border")}>
           <Sidebar />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        </div>
+      </div>
+      <div className="w-full h-full md:hidden">
+        {sidebarVisible ? (
+          <div className=" h-full border-l borderl-l-border">
+            <Sidebar />
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col h-full">
+            <Workspace />
+          </div>
+        )}
+      </div>
     </main>
   );
 }

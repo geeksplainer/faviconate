@@ -40,6 +40,7 @@ export interface FaviconateState {
   selectTool?: SelectionToolCommands;
   zoom?: number;
   pickingColor?: boolean;
+  sidebarVisible?: boolean;
   setTool: (tool: Tool) => void;
   setColor: (color: Color) => void;
   toggleGrid: () => void;
@@ -51,6 +52,7 @@ export interface FaviconateState {
   setPickingColor?: (picking: boolean) => void;
   undo?: () => void;
   redo?: () => void;
+  setSidebarVisible?: (visible: boolean) => void;
 }
 
 const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
@@ -102,6 +104,7 @@ export const FaviconateProvider = ({
   const [color, setColor] = useState<Color>(new Color(150, 150, 150));
   const [zoom, setZoom] = useState<number>(1);
   const [pickingColor, setPickingColor] = useState<boolean>(false);
+  const [sidebarVisible, setSidebarVisible] = useState<boolean>(false);
   const [controllerProps, setControllerProps] = useState<IconCanvasProps>(
     getDefaultControllerProps(dark)
   );
@@ -240,6 +243,8 @@ export const FaviconateProvider = ({
         selectTool: selection,
         zoom,
         pickingColor,
+        sidebarVisible,
+        setSidebarVisible,
         setPickingColor,
         setColor,
         setTool,

@@ -3,19 +3,28 @@ import { Commands } from "@/components/commands";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import {
   Eraser,
+  Github,
   Grid2X2,
   Grid3X3,
   MousePointer,
   PaintBucket,
+  PanelRight,
   Pencil,
-  User,
 } from "lucide-react";
 
 export function TopToolbar() {
-  const { tool, grid, checker, setTool, toggleGrid, toggleChecker } =
-    useFaviconate();
+  const {
+    tool,
+    grid,
+    checker,
+    setTool,
+    toggleGrid,
+    toggleChecker,
+    setSidebarVisible,
+  } = useFaviconate();
   return (
     <div className="p-2 flex justify-between items-center">
       <Commands />
@@ -71,9 +80,18 @@ export function TopToolbar() {
           <Grid2X2 size={16} />
         </Button>
       </div>
-      <Button variant="outline" size="icon">
-        <User size={16} />
-      </Button>
+      <div className="flex gap-2">
+        <div className="md:hidden border-input border items-center rounded-md flex p-1 gap-1">
+          <Button
+            className=""
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarVisible?.(true)}
+          >
+            <PanelRight size={16} />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
