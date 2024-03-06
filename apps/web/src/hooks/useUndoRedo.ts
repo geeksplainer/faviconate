@@ -13,11 +13,13 @@ export function useUndoRedo<T>(initialState: T): {
   const [redoStack, setRedoStack] = useState<T[]>([]);
 
   const commit = () => {
+    console.log("commiting");
     setUndoStack([...undoStack, document]);
     setRedoStack([]);
   };
 
   const undo = () => {
+    console.log("undoing");
     if (undoStack.length > 1) {
       const last = undoStack[undoStack.length - 1];
       const desired = undoStack[undoStack.length - 2];

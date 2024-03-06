@@ -9,10 +9,12 @@ import { Sidebar } from "./components/sidebar";
 import { IconArea } from "./components/icon-area";
 import { TopToolbar } from "./components/top-toolbar";
 import { BottomToolbar } from "./components/bottom-toolbar";
+import { Commands } from "@/components/commands";
 
 export default function Home() {
   return (
     <main className=" w-svw h-svh ">
+      <Commands />
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={80} className="flex flex-col relative">
           <TopToolbar />

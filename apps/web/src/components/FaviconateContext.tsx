@@ -49,6 +49,8 @@ export interface FaviconateState {
   removeDocument?: (index: number) => void;
   setZoom?: (zoom: number) => void;
   setPickingColor?: (picking: boolean) => void;
+  undo?: () => void;
+  redo?: () => void;
 }
 
 const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
@@ -109,6 +111,8 @@ export const FaviconateProvider = ({
     setDocument: setDocuments,
     commit,
     rollback,
+    undo,
+    redo,
   } = useUndoRedo([getDefaultControllerProps(dark).document]);
 
   const document = documents[currentDocument];
@@ -245,6 +249,8 @@ export const FaviconateProvider = ({
         setCurrentDocument,
         removeDocument,
         setZoom,
+        undo,
+        redo,
       }}
     >
       {children}
