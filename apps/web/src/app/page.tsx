@@ -8,23 +8,24 @@ export default function Home() {
   const { sidebarVisible } = useFaviconate();
   return (
     <main className="w-svw h-svh">
-      <div className="hidden w-full h-full md:flex">
-        <div className="flex-1 flex flex-col">
-          <Workspace />
-        </div>
-        <div className={cn("w-[300px] h-full border-l borderl-l-border")}>
-          <Sidebar />
-        </div>
-      </div>
-      <div className="w-full h-full md:hidden">
+      <div className="flex w-full h-full">
         {sidebarVisible ? (
-          <div className=" h-full">
+          <div>
             <Sidebar />
           </div>
         ) : (
-          <div className="flex-1 flex flex-col h-full">
-            <Workspace />
-          </div>
+          <>
+            <div className="flex-1 flex flex-col">
+              <Workspace />
+            </div>
+            <div
+              className={cn(
+                "hidden w-[300px] h-full border-l borderl-l-border md:block"
+              )}
+            >
+              <Sidebar />
+            </div>
+          </>
         )}
       </div>
     </main>
