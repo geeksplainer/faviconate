@@ -21,6 +21,10 @@ export function ColorPicker({
   onPickingChanged?: (picking: boolean) => void;
 }) {
   const [text, setText] = useState("");
+  const [textR, setTextR] = useState("");
+  const [textG, setTextG] = useState("");
+  const [textB, setTextB] = useState("");
+  const [textA, setTextA] = useState("");
   const [hue, setHue] = useState(value.hsv[0]);
   const [sat, setSat] = useState(value.hsv[1]);
   const [val, setVal] = useState(value.hsv[2]);
@@ -42,6 +46,19 @@ export function ColorPicker({
     } catch {}
   };
 
+  const handleSubmitRGB = (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const color = new Color(
+        parseInt(textR, 10),
+        parseInt(textG, 10),
+        parseInt(textB, 10),
+        parseInt(textA, 10)
+      );
+      setValue(color);
+    } catch {}
+  };
+
   useEffect(() => {
     const color = Color.fromHsv(hue, sat, val).withAlpha(alpha / 100);
     setValue(color);
@@ -49,6 +66,10 @@ export function ColorPicker({
 
   useEffect(() => {
     setText(value.a < 1 ? value.hexRgba : value.hexRgb);
+    setTextR(value.r.toString());
+    setTextG(value.g.toString());
+    setTextB(value.b.toString());
+    setTextA(value.a.toString());
   }, [value]);
 
   useEffect(() => {
@@ -114,21 +135,59 @@ export function ColorPicker({
         onValueChange={(v) => setAlpha(v[0])}
       />
       <div className="opacity-30 text-xs">
-        H: {hue} S: {Math.round(sat * 100)} V: {Math.round(val * 100)} A:{" "}
+        HSV: ({hue}, {Math.round(sat * 100)}%, {Math.round(val * 100)}%), A:{" "}
         {alpha}
       </div>
-      <div className="flex gap-3">
+      <div className="flex gap-3 items-end">
         <Button
           variant="outline"
           size="icon"
-          className={cn(picking && "bg-primary text-primary-foreground")}
+          className={cn(
+            "hidden",
+            picking && "bg-primary text-primary-foreground"
+          )}
           onClick={() => setPicking(!picking)}
         >
           <Pipette size={16} />
         </Button>
         <form onSubmit={handleSubmit} className="">
           <div>
+            <div className="text-xs text-center opacity-30">Hex</div>
             <Input value={text} onChange={(e) => setText(e.target.value)} />
+          </div>
+        </form>
+        <form onSubmit={handleSubmitRGB} className="flex items-end gap-2">
+          <div>
+            <div className="text-xs text-center opacity-30">R</div>
+            <Input
+              className="w-14"
+              value={textR}
+              onChange={(e) => setTextR(e.target.value)}
+            />
+          </div>
+          <div>
+            <div className="text-xs text-center opacity-30">G</div>
+            <Input
+              className="w-14"
+              value={textG}
+              onChange={(e) => setTextG(e.target.value)}
+            />
+          </div>
+          <div>
+            <div className="text-xs text-center opacity-30">B</div>
+            <Input
+              className="w-14"
+              value={textB}
+              onChange={(e) => setTextB(e.target.value)}
+            />
+          </div>
+          <div className="hidden">
+            <div className="text-xs text-center opacity-30">A</div>
+            <Input
+              className="w-14"
+              value={textA}
+              onChange={(e) => setTextA(e.target.value)}
+            />
           </div>
         </form>
       </div>

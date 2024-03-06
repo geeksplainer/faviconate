@@ -1,4 +1,5 @@
 import { useFaviconate } from "@/components/FaviconateContext";
+import { Commands } from "@/components/commands";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -6,7 +7,6 @@ import {
   Eraser,
   Grid2X2,
   Grid3X3,
-  Menu,
   MousePointer,
   PaintBucket,
   Pencil,
@@ -18,9 +18,7 @@ export function TopToolbar() {
     useFaviconate();
   return (
     <div className="p-2 flex justify-between items-center">
-      <Button variant="outline" size="icon">
-        <Menu className="h-[1.2rem] w-[1.2rem]" />
-      </Button>
+      <Commands />
       <div className="border-input border items-center rounded-md flex p-1 gap-1">
         <Button
           variant="ghost"
