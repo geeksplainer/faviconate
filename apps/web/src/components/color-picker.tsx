@@ -1,5 +1,6 @@
+"force client";
 import { Color } from "@faviconate/pixler/src/model/util/Color";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Range2d } from "./range-2d";
@@ -25,6 +26,8 @@ export function ColorPicker({
   const [val, setVal] = useState(value.hsv[2]);
   const [alpha, setAlpha] = useState(value.a * 100);
   const [picking, setPicking] = useState(false);
+  const swatchRef = useRef<HTMLDivElement>(null);
+  const hueRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +55,10 @@ export function ColorPicker({
     onPickingChanged?.(picking);
   }, [picking, onPickingChanged]);
 
+  useEffect(() => {
+    onPickingChanged?.(picking);
+  }, [picking, onPickingChanged]);
+
   if (hueImg === null) {
     hueImg = createHuePattern();
   }
@@ -60,17 +67,27 @@ export function ColorPicker({
     bgPattern = createBgPattern();
   }
 
+  useEffect(() => {
+    if (swatchRef.current) {
+      swatchRef.current.style.backgroundImage = `url(${bgPattern})`;
+    }
+    if (hueRef.current) {
+      hueRef.current.style.backgroundImage = `url(${hueImg})`;
+    }
+  }, []);
+
   const satImg = createSaturationPattern(hue, 10);
+  const displayColor = value;
 
   return (
     <div className="flex flex-col gap-3">
       <div
+        ref={swatchRef}
         className="border border-border rounded-md h-8 relative overflow-hidden bg-repeat"
-        style={{ backgroundImage: `url(${bgPattern})` }}
       >
         <div
           className="absolute inset-0"
-          style={{ backgroundColor: value.hexRgba }}
+          style={{ backgroundColor: displayColor.hexRgba }}
         />
       </div>
       <Range2d
@@ -82,11 +99,11 @@ export function ColorPicker({
         className="mb-6"
       />
       <Slider
+        ref={hueRef}
         min={0}
         max={360}
         value={[hue]}
         onValueChange={(h) => setHue(h[0])}
-        style={{ backgroundImage: `url(${hueImg})` }}
         className=" bg-contain bg-str mb-6"
         noRange
       />
@@ -164,18 +181,23 @@ function createSaturationPattern(hue = 1, length = 10): string {
   return dataUrlFrom(arr, length);
 }
 function dataUrlFrom(data: Uint8ClampedArray, width: number): string {
-  const imageData = new ImageData(data, width);
-  const canvas: HTMLCanvasElement = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = data.length / 4 / width;
+  try {
+    const imageData = new ImageData(data, width);
+    const canvas: HTMLCanvasElement = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = data.length / 4 / width;
 
-  const cx = canvas.getContext("2d");
+    const cx = canvas.getContext("2d");
 
-  if (!cx) {
-    throw Error("Graphics Error");
+    if (!cx) {
+      throw Error("Graphics Error");
+    }
+
+    cx.putImageData(imageData, 0, 0);
+
+    return canvas.toDataURL();
+  } catch (e) {
+    console.error(e);
+    return "";
   }
-
-  cx.putImageData(imageData, 0, 0);
-
-  return canvas.toDataURL();
 }

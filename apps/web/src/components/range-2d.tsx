@@ -6,6 +6,7 @@ export function Range2d({
   y,
   setX,
   setY,
+  commit,
   bg,
   className,
 }: {
@@ -13,6 +14,7 @@ export function Range2d({
   y: number;
   setX: (x: number) => void;
   setY: (y: number) => void;
+  commit?: () => void;
   bg?: string;
   className?: string;
 }) {
@@ -51,6 +53,7 @@ export function Range2d({
     function mouseUp() {
       setMouseDownData(null);
       down = false;
+      commit?.();
     }
 
     window.addEventListener("mousemove", mouseMove);
@@ -61,7 +64,13 @@ export function Range2d({
       window.removeEventListener("mouseup", mouseUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mouseDownData]);
+  }, [mouseDownData, commit]);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.style.backgroundImage = `url(${bg})`;
+    }
+  }, [bg]);
 
   return (
     <div
@@ -72,7 +81,6 @@ export function Range2d({
         className
       )}
       onMouseDown={handleMouseDown}
-      style={{ backgroundImage: `url(${bg})` }}
     >
       <div
         ref={handleRef}
