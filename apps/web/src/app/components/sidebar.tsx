@@ -1,4 +1,5 @@
 import { useFaviconate } from "@/components/FaviconateContext";
+import { Bucket } from "@/components/sidebar/bucket";
 import { Export } from "@/components/sidebar/export";
 import { Pencil } from "@/components/sidebar/pencil";
 import { Preview } from "@/components/sidebar/preview";
@@ -11,6 +12,7 @@ export function Sidebar() {
       <Preview />
       {tool === "select" && <Selection />}
       {tool === "pencil" && <Pencil />}
+      {tool === "bucket" && <Bucket />}
       <Export />
     </div>
   );

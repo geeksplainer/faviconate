@@ -57,6 +57,7 @@ export function Preview() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>Add Icon</DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 {sizes.map((size) => (
                   <DropdownMenuItem

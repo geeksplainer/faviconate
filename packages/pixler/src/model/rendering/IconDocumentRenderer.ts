@@ -8,7 +8,7 @@ import { createBitmapCanvas, createLegoPegOverlay } from "./RenderUtils";
 import { createCheckerPattern } from "./checker";
 
 const CORNER_RADIUS = 0;
-
+const MIN_PIXEL_SIZE_FOR_GRID = 10;
 const CLOCK_MOD = 4;
 
 interface Corners {
@@ -256,6 +256,13 @@ export class IconDocumentRenderer {
   }
 
   private renderGrid(pixelSize: Size, color: Color) {
+    if (
+      pixelSize.width < MIN_PIXEL_SIZE_FOR_GRID ||
+      pixelSize.height < MIN_PIXEL_SIZE_FOR_GRID
+    ) {
+      return;
+    }
+
     const { document, context } = this.params;
     const ctx = context;
     const { icon } = document;

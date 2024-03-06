@@ -18,6 +18,7 @@ import {
   makeSz,
   Point,
   Rectangle,
+  scaleSize,
   scaleToContain,
   Size,
 } from "./util/Rectangle";
@@ -54,6 +55,7 @@ export type IconCanvasProps = {
   tool?: IconEditorTool;
   colorPicking?: boolean;
   onColorPicked?: ColorPickCallback;
+  zoom?: number;
 };
 
 export type IconCanvasController = CanvasViewController & {
@@ -77,6 +79,7 @@ export function createIconCanvasController({
   tool,
   colorPicking,
   onColorPicked,
+  zoom = 1,
 }: IconCanvasProps): IconCanvasController {
   const id = uuid();
   const iconSize = makeSz(document.icon.width, document.icon.height);
@@ -319,7 +322,14 @@ export function createIconCanvasController({
     const { icon } = document;
     const cvBounds = new Rectangle(0, 0, size.width, size.height);
     const previewArea = cvBounds.deflate(0, 0);
-    const previewSize = scaleToContain(previewArea.size, iconSize);
+    const zoomedSize = scaleSize(
+      scaleToContain(previewArea.size, iconSize),
+      zoom
+    );
+    const previewSize =
+      zoomedSize.width < icon.width || zoomedSize.height < icon.height
+        ? makeSz(icon.width, icon.height)
+        : zoomedSize;
     previewPixelSize =
       Math.min(previewSize.width, previewSize.height) /
       Math.min(icon.width, icon.height);

@@ -8,14 +8,16 @@ import {
 import { Sidebar } from "./components/sidebar";
 import { IconArea } from "./components/icon-area";
 import { TopToolbar } from "./components/top-toolbar";
+import { BottomToolbar } from "./components/bottom-toolbar";
 
 export default function Home() {
   return (
     <main className=" w-svw h-svh ">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={80} className="flex flex-col">
+        <ResizablePanel defaultSize={80} className="flex flex-col relative">
           <TopToolbar />
           <IconArea className="flex-1" />
+          <BottomToolbar />
           <ModeToggle />
         </ResizablePanel>
         <ResizableHandle />

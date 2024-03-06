@@ -78,6 +78,10 @@ export function scaleToContain(container: Size, scalable: Size): Size {
   return hOriented;
 }
 
+export function scaleSize(size: Size, factor: number): Size {
+  return makeSz(size.width * factor, size.height * factor);
+}
+
 export function scaleToFill(container: Size, scalable: Size): Size {
   const wOriented = makeSz(
     container.width,

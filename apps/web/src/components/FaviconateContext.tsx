@@ -38,6 +38,7 @@ export interface FaviconateState {
   color: Color;
   checker: boolean;
   selectTool?: SelectionToolCommands;
+  zoom?: number;
   setTool: (tool: Tool) => void;
   setColor: (color: Color) => void;
   toggleGrid: () => void;
@@ -45,6 +46,7 @@ export interface FaviconateState {
   setCurrentDocument?: (index: number) => void;
   addDocument?: (document: IconDocument) => void;
   removeDocument?: (index: number) => void;
+  setZoom?: (zoom: number) => void;
 }
 
 const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
@@ -94,6 +96,7 @@ export const FaviconateProvider = ({
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
   const [color, setColor] = useState<Color>(new Color(150, 150, 150));
+  const [zoom, setZoom] = useState<number>(1);
   const [controllerProps, setControllerProps] = useState<IconCanvasProps>(
     getDefaultControllerProps(dark)
   );
@@ -142,6 +145,7 @@ export const FaviconateProvider = ({
     setDocument,
     commit,
     rollback,
+    zoom,
     tool:
       tool === "select"
         ? selection
@@ -181,7 +185,6 @@ export const FaviconateProvider = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     const resolved = !!resolvedTheme && resolvedTheme !== "system";
-    console.log({ resolvedTheme, resolved });
     setControllerProps({
       ...controllerProps,
       renderParams: {
@@ -221,6 +224,7 @@ export const FaviconateProvider = ({
         color,
         checker,
         selectTool: selection,
+        zoom,
         setColor,
         setTool,
         toggleGrid: () => setGrid(!grid),
@@ -228,6 +232,7 @@ export const FaviconateProvider = ({
         addDocument,
         setCurrentDocument,
         removeDocument,
+        setZoom,
       }}
     >
       {children}
