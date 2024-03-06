@@ -13,19 +13,20 @@ export function useUndoRedo<T>(initialState: T): {
   const [redoStack, setRedoStack] = useState<T[]>([]);
 
   const commit = () => {
-    console.log("commiting");
     setUndoStack([...undoStack, document]);
     setRedoStack([]);
   };
 
   const undo = () => {
-    console.log("undoing");
     if (undoStack.length > 1) {
+      console.log("undo");
       const last = undoStack[undoStack.length - 1];
       const desired = undoStack[undoStack.length - 2];
       setUndoStack(undoStack.slice(0, undoStack.length - 1));
       setRedoStack([...redoStack, last]);
       setDocument(desired);
+    } else {
+      console.log("undo not possible", undoStack);
     }
   };
 

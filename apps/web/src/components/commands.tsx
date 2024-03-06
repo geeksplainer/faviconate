@@ -45,7 +45,7 @@ export function Commands() {
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [undo, redo]);
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
