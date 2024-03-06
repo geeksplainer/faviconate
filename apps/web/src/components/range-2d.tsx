@@ -68,7 +68,7 @@ export function Range2d({
     <div
       ref={containerRef}
       className={cn(
-        "border border-border rounded-md h-20 bg-cover relative",
+        "rounded-md h-20 bg-cover relative",
         "before:absolute before:inset-0 before:bg-gradient-to-t before:from-black before:to-transparent",
         className
       )}

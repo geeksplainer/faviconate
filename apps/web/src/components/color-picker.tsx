@@ -4,6 +4,9 @@ import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Range2d } from "./range-2d";
 
+let hueImg: string | null = null;
+let bgPattern: string | null = null;
+
 export function ColorPicker({
   value,
   setValue,
@@ -12,29 +15,52 @@ export function ColorPicker({
   setValue: (value: Color) => void;
 }) {
   const [text, setText] = useState("");
-  const [hue, setHue] = useState(0);
-  const [sat, setSat] = useState(0);
-  const [val, setVal] = useState(0);
+  const [hue, setHue] = useState(value.hsv[0]);
+  const [sat, setSat] = useState(value.hsv[1]);
+  const [val, setVal] = useState(value.hsv[2]);
+  const [alpha, setAlpha] = useState(value.a * 100);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    //setColor(Color.fromHex(text));
+    try {
+      const color = Color.fromHex(text);
+      setValue(color);
+      const [h, s, v] = color.hsv;
+      setHue(h);
+      setSat(s);
+      setVal(v);
+    } catch {}
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    setValue(Color.fromHsv(hue, sat, val));
-  }, [hue, sat, val]);
+    setValue(Color.fromHsv(hue, sat, val).withAlpha(alpha / 100));
+  }, [setValue, hue, sat, val, alpha]);
+
+  useEffect(() => {
+    setText(value.a < 1 ? value.hexRgba : value.hexRgb);
+  }, [value]);
+
+  if (hueImg === null) {
+    hueImg = createHuePattern();
+  }
+
+  if (bgPattern === null) {
+    bgPattern = createBgPattern();
+  }
 
   const satImg = createSaturationPattern(hue, 10);
-  const hueImg = createHuePattern();
 
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="border border-border rounded-md h-8"
-        style={{ backgroundColor: value.toString() }}
-      />
+        className="border border-border rounded-md h-8 relative overflow-hidden bg-repeat"
+        style={{ backgroundImage: `url(${bgPattern})` }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: value.hexRgba }}
+        />
+      </div>
       <Range2d
         x={sat}
         y={val}
@@ -52,11 +78,17 @@ export function ColorPicker({
         className=" bg-contain bg-str mb-6"
         noRange
       />
-      <Slider min={0} max={100} />
-      <div>
-        H: {hue} S: {Math.round(sat * 100)} V: {Math.round(val * 100)}
+      <Slider
+        min={0}
+        max={100}
+        value={[alpha]}
+        onValueChange={(v) => setAlpha(v[0])}
+      />
+      <div className="opacity-30 text-xs">
+        H: {hue} S: {Math.round(sat * 100)} V: {Math.round(val * 100)} A:{" "}
+        {alpha}
       </div>
-      <form onSubmit={handleSubmit} className="hidden">
+      <form onSubmit={handleSubmit} className="">
         <div>
           <Input value={text} onChange={(e) => setText(e.target.value)} />
         </div>
