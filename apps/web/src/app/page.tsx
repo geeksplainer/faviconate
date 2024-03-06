@@ -18,7 +18,7 @@ export default function Home() {
       </div>
       <div className="w-full h-full md:hidden">
         {sidebarVisible ? (
-          <div className=" h-full border-l borderl-l-border">
+          <div className=" h-full">
             <Sidebar />
           </div>
         ) : (
