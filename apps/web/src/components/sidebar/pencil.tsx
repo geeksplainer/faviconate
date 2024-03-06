@@ -7,13 +7,17 @@ import {
 import { ColorPicker } from "../color-picker";
 
 export function Pencil() {
-  const { color, setColor } = useFaviconate();
+  const { color, setColor, setPickingColor } = useFaviconate();
 
   return (
     <SidebarPanel>
       <SidebarPanelTitle>Pencil</SidebarPanelTitle>
       <SidebarPanelContent>
-        <ColorPicker value={color} setValue={setColor} />
+        <ColorPicker
+          value={color}
+          setValue={setColor}
+          onPickingChanged={setPickingColor}
+        />
       </SidebarPanelContent>
     </SidebarPanel>
   );

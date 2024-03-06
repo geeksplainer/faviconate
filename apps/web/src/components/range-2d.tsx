@@ -49,7 +49,6 @@ export function Range2d({
     };
 
     function mouseUp() {
-      console.log("up");
       setMouseDownData(null);
       down = false;
     }

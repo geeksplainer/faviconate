@@ -39,6 +39,7 @@ export interface FaviconateState {
   checker: boolean;
   selectTool?: SelectionToolCommands;
   zoom?: number;
+  pickingColor?: boolean;
   setTool: (tool: Tool) => void;
   setColor: (color: Color) => void;
   toggleGrid: () => void;
@@ -47,6 +48,7 @@ export interface FaviconateState {
   addDocument?: (document: IconDocument) => void;
   removeDocument?: (index: number) => void;
   setZoom?: (zoom: number) => void;
+  setPickingColor?: (picking: boolean) => void;
 }
 
 const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
@@ -97,6 +99,7 @@ export const FaviconateProvider = ({
   const dark = resolvedTheme === "dark";
   const [color, setColor] = useState<Color>(new Color(150, 150, 150));
   const [zoom, setZoom] = useState<number>(1);
+  const [pickingColor, setPickingColor] = useState<boolean>(false);
   const [controllerProps, setControllerProps] = useState<IconCanvasProps>(
     getDefaultControllerProps(dark)
   );
@@ -145,6 +148,13 @@ export const FaviconateProvider = ({
     setDocument,
     commit,
     rollback,
+    colorPicking: pickingColor,
+    onColorPicked: (color) => {
+      if (color) {
+        setColor(color);
+        setPickingColor(false);
+      }
+    },
     zoom,
     tool:
       tool === "select"
@@ -225,6 +235,8 @@ export const FaviconateProvider = ({
         checker,
         selectTool: selection,
         zoom,
+        pickingColor,
+        setPickingColor,
         setColor,
         setTool,
         toggleGrid: () => setGrid(!grid),

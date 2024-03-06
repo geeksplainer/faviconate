@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Range2d } from "./range-2d";
+import { Button } from "./ui/button";
+import { Pipette } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 let hueImg: string | null = null;
 let bgPattern: string | null = null;
@@ -10,15 +13,18 @@ let bgPattern: string | null = null;
 export function ColorPicker({
   value,
   setValue,
+  onPickingChanged,
 }: {
   value: Color;
   setValue: (value: Color) => void;
+  onPickingChanged?: (picking: boolean) => void;
 }) {
   const [text, setText] = useState("");
   const [hue, setHue] = useState(value.hsv[0]);
   const [sat, setSat] = useState(value.hsv[1]);
   const [val, setVal] = useState(value.hsv[2]);
   const [alpha, setAlpha] = useState(value.a * 100);
+  const [picking, setPicking] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,16 +35,22 @@ export function ColorPicker({
       setHue(h);
       setSat(s);
       setVal(v);
+      setAlpha(color.a * 100);
     } catch {}
   };
 
   useEffect(() => {
-    setValue(Color.fromHsv(hue, sat, val).withAlpha(alpha / 100));
+    const color = Color.fromHsv(hue, sat, val).withAlpha(alpha / 100);
+    setValue(color);
   }, [setValue, hue, sat, val, alpha]);
 
   useEffect(() => {
     setText(value.a < 1 ? value.hexRgba : value.hexRgb);
   }, [value]);
+
+  useEffect(() => {
+    onPickingChanged?.(picking);
+  }, [picking, onPickingChanged]);
 
   if (hueImg === null) {
     hueImg = createHuePattern();
@@ -88,11 +100,21 @@ export function ColorPicker({
         H: {hue} S: {Math.round(sat * 100)} V: {Math.round(val * 100)} A:{" "}
         {alpha}
       </div>
-      <form onSubmit={handleSubmit} className="">
-        <div>
-          <Input value={text} onChange={(e) => setText(e.target.value)} />
-        </div>
-      </form>
+      <div className="flex gap-3">
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(picking && "bg-primary text-primary-foreground")}
+          onClick={() => setPicking(!picking)}
+        >
+          <Pipette size={16} />
+        </Button>
+        <form onSubmit={handleSubmit} className="">
+          <div>
+            <Input value={text} onChange={(e) => setText(e.target.value)} />
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

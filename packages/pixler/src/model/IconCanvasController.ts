@@ -266,16 +266,6 @@ export function createIconCanvasController({
   const pointingGestureMove = (
     e: PointingEvent
   ): PointingEventResult | undefined => {
-    if (colorPicking) {
-      const color = colorFromPoint(e.point);
-
-      if (color) {
-        onColorPicked?.(color);
-      }
-
-      return;
-    }
-
     if (tool?.pointingGestureMove) {
       // eslint-disable-next-line consistent-return
       return tool.pointingGestureMove({
