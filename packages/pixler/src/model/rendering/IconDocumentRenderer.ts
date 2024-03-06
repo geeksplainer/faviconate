@@ -1,4 +1,3 @@
-import { IconDocument } from "../IconEditor";
 import { makePt, makeSz, Point, Rectangle, Size } from "../util/Rectangle";
 import { Color } from "../util/Color";
 import { MemoryError } from "../errors";
@@ -6,6 +5,7 @@ import { MarchingAnts } from "./MarchingAnts";
 import { IconService } from "../IconService";
 import { createBitmapCanvas, createLegoPegOverlay } from "./RenderUtils";
 import { createCheckerPattern } from "./checker";
+import { IconDocument } from "../../models";
 
 const CORNER_RADIUS = 0;
 const MIN_PIXEL_SIZE_FOR_GRID = 10;
@@ -45,24 +45,25 @@ export class IconDocumentRenderer {
     canvas: HTMLCanvasElement;
     cx: CanvasRenderingContext2D;
   } {
+    const t = IconDocumentRenderer;
     if (
-      !this.pixelsBuffer ||
-      this.pixelsBuffer.width !== canvasSize.width ||
-      this.pixelsBuffer.height !== canvasSize.height
+      !t.pixelsBuffer ||
+      t.pixelsBuffer.width !== canvasSize.width ||
+      t.pixelsBuffer.height !== canvasSize.height
     ) {
-      this.pixelsBuffer = document.createElement("canvas");
-      this.pixelsBuffer.width = canvasSize.width;
-      this.pixelsBuffer.height = canvasSize.height;
-      this.pixelsContext = this.pixelsBuffer.getContext("2d");
+      t.pixelsBuffer = document.createElement("canvas");
+      t.pixelsBuffer.width = canvasSize.width;
+      t.pixelsBuffer.height = canvasSize.height;
+      t.pixelsContext = t.pixelsBuffer.getContext("2d");
     }
 
-    if (!this.pixelsContext) {
+    if (!t.pixelsContext) {
       throw new MemoryError();
     }
 
     return {
-      canvas: this.pixelsBuffer,
-      cx: this.pixelsContext,
+      canvas: t.pixelsBuffer,
+      cx: t.pixelsContext,
     };
   }
 
@@ -149,6 +150,7 @@ export class IconDocumentRenderer {
 
     c.beginPath();
 
+    // biome-ignore lint/complexity/noForEach: <explanation>
     lines.forEach((line) => {
       c.moveTo(line[0].x, line[0].y);
       c.lineTo(line[1].x, line[1].y);
@@ -299,7 +301,7 @@ export class IconDocumentRenderer {
       p.offset(0, -r).southSegment,
       p.offset(r, 0).westSegment,
     ]);
-    context.strokeStyle = gridOut().cssRgba;
+    //context.strokeStyle = gridOut().cssRgba;
     context.stroke();
   }
 
@@ -356,7 +358,7 @@ export class IconDocumentRenderer {
   private drawPlate() {
     const { plateBounds, context } = this.params;
     this.pathRoundRect(plateBounds, CORNER_RADIUS);
-    context.fillStyle = plateBg().cssRgba;
+    //context.fillStyle = plateBg().cssRgba;
     context.fill();
   }
 

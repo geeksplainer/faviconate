@@ -11,7 +11,7 @@ interface Props extends React.CanvasHTMLAttributes<HTMLCanvasElement> {
   render: (data: RenderParams) => void;
 }
 
-export const CanvasView: FC<Props> = (props) => {
+export function CanvasView(props: Props) {
   const { render, className, ...rest } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,4 +75,4 @@ export const CanvasView: FC<Props> = (props) => {
       <canvas ref={canvasRef} {...rest} />
     </div>
   );
-};
+}

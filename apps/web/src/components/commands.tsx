@@ -30,7 +30,7 @@ interface Shortcut {
 }
 
 export function Commands() {
-  const { undo, redo, controller, setTool } = useFaviconate();
+  const { undo, redo, controller, setTool, selectTool } = useFaviconate();
   const { promptFile } = useImportFile();
   const [open, setOpen] = useState(false);
 
@@ -43,12 +43,13 @@ export function Commands() {
       { key: "c", meta: true, action: () => controller.copy() },
       { key: "v", meta: true, action: () => controller.paste() },
       { key: "i", meta: true, action: () => promptFile() },
+      { key: "a", meta: true, action: () => selectTool?.selectAll() },
       { key: "v", action: () => setTool("select") },
       { key: "d", action: () => setTool("pencil") },
       { key: "f", action: () => setTool("bucket") },
       { key: "e", action: () => setTool("eraser") },
     ],
-    [undo, redo, controller, setTool, promptFile]
+    [undo, redo, controller, setTool, promptFile, selectTool]
   );
 
   useEffect(() => {
