@@ -16,6 +16,7 @@ import { usePencil } from "@/hooks/usePencil";
 import { SelectionToolCommands, useSelection } from "@/hooks/useSelection";
 import { useFloodFill } from "@/hooks/useFloodFill";
 import { IconDocument } from "@faviconate/pixler/src/models";
+import { changeFavicon } from "@faviconate/pixler/src/model/util/utilities";
 
 type Tool = "select" | "pencil" | "bucket" | "eraser";
 
@@ -119,8 +120,12 @@ export const FaviconateProvider = ({
   } = useUndoRedo([getDefaultControllerProps(dark).document]);
 
   const document = documents[currentDocument];
-  const setDocument = (doc: IconDocument) =>
+  const setDocument = (doc: IconDocument) => {
     setDocuments(documents.map((d, i) => (i === currentDocument ? doc : d)));
+    IconService.asBlobUrl(doc.icon)
+      .then((src) => changeFavicon(src))
+      .catch(console.error);
+  };
 
   const pencil = usePencil({
     color,
