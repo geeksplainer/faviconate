@@ -1,10 +1,8 @@
 import { useFaviconate } from "@/components/FaviconateContext";
 import { IconService } from "@faviconate/pixler/src/model/IconService";
-import { importFile } from "@faviconate/pixler/src/model/util/utilities";
 
 export function useImportFile() {
-  const { controller, setTool, addDocument, replaceDocuments } =
-    useFaviconate();
+  const { controller, setTool, replaceDocuments } = useFaviconate();
   const promptFile = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -23,7 +21,12 @@ export function useImportFile() {
   const importFile = async (file: File): Promise<void> => {
     if (file.name.toLocaleLowerCase().endsWith(".ico")) {
       const dir = await IconService.fromIcoBlob(file);
-      replaceDocuments?.(dir.icons.map((icon) => ({ icon })));
+      if (dir.icons.length > 1) {
+        replaceDocuments?.(dir.icons.map((icon) => ({ icon })));
+      } else {
+        controller.importFile(file);
+        setTool("select");
+      }
     } else {
       controller.importFile(file);
       setTool("select");
