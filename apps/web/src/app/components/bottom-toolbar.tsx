@@ -12,7 +12,7 @@ export function BottomToolbar() {
   return (
     <div className="min-h-[50px] flex justify-between shrink-0 p-2">
       <ModeToggle />
-      <div className="flex gap-1">
+      <div className="flex gap-1 md:hidden">
         <Button
           variant="ghost"
           size="icon"
