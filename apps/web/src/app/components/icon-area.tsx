@@ -1,10 +1,12 @@
 import { useFaviconate } from "@/components/FaviconateContext";
+import { useImportFile } from "@/hooks/useImportFile";
 import { cn } from "@/lib/utils";
 import { IconControllerView } from "@faviconate/pixler/src/components/IconControllerView";
 import { useState } from "react";
 
 export function IconArea({ className }: { className?: string }) {
   const { controller, setTool } = useFaviconate();
+  const { importFile } = useImportFile();
   const [hot, setHot] = useState(false);
 
   function onDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -24,7 +26,7 @@ export function IconArea({ className }: { className?: string }) {
 
         if (file) {
           setTool("select");
-          controller?.importFile?.(file);
+          importFile?.(file);
         } else {
           console.warn("Item was no file");
         }

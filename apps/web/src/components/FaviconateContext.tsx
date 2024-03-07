@@ -54,6 +54,7 @@ export interface FaviconateState {
   undo?: () => void;
   redo?: () => void;
   setSidebarVisible?: (visible: boolean) => void;
+  replaceDocuments?: (documents: IconDocument[]) => void;
 }
 
 const getDefaultControllerProps = (dark: boolean): IconCanvasProps => {
@@ -188,6 +189,11 @@ export const FaviconateProvider = ({
     setCurrentDocument(0);
   };
 
+  const replaceDocuments = (documents: IconDocument[]) => {
+    setDocuments(documents);
+    setCurrentDocument(0);
+  };
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!controller.document) {
@@ -261,6 +267,7 @@ export const FaviconateProvider = ({
         setZoom,
         undo,
         redo,
+        replaceDocuments,
       }}
     >
       {children}
